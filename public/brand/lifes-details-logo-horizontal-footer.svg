@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 160" width="560" height="160">
+  <title>Life's Details - horizontal footer logo</title>
+  <desc>Icon mark plus wordmark "Life's Details" and tagline "Attention to every detail"</desc>
+
+  <g transform="translate(0,0)">
+    <rect x="0" y="0" width="160" height="160" rx="24" fill="#0F3D3E"/>
+    <text x="80" y="112" font-family="Georgia, 'Times New Roman', serif" font-size="80" font-weight="600" fill="#F4F1EA" text-anchor="middle">L</text>
+    <path d="M112 42 C118 52 118 60 110 66 C117 62 124 64 127 71" fill="none" stroke="#D8A24A" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <text x="190" y="88" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="600" fill="#F4F1EA">Life's Details</text>
+  <text x="191" y="116" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="2" fill="#D8A24A">ATTENTION TO EVERY DETAIL</text>
+</svg>
