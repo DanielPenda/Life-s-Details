@@ -1,4 +1,6 @@
 .next/
+.next-build/
+.next-*/
 node_modules/
 .pnpm-store/
 dist/
@@ -6,5 +8,4 @@ coverage/
 .env
 .env*.local
 *.tsbuildinfo
-next-dev.log
-next-dev.err.log
+next-*.log

@@ -1,4 +1,5 @@
 import { Menu } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { businessInfo } from "@/config/business";
 import { navigation } from "@/config/navigation";
@@ -8,8 +9,14 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="container header-inner">
         <Link className="brand" href="/" aria-label={`${businessInfo.name} home`}>
-          <span className="brand-mark">LD</span>
-          <span>{businessInfo.name}</span>
+          <Image
+            className="brand-logo brand-logo-header"
+            src="/brand/lifes-details-logo-horizontal.svg"
+            alt=""
+            width={560}
+            height={160}
+            priority
+          />
         </Link>
         <nav className="desktop-nav" aria-label="Primary navigation">
           {navigation.map((item) => (

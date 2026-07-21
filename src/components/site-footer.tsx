@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { businessInfo, contactLinks } from "@/config/business";
 import { navigation } from "@/config/navigation";
@@ -8,8 +9,13 @@ export function SiteFooter() {
       <div className="container footer-grid">
         <div className="stack">
           <Link className="brand" href="/" aria-label={`${businessInfo.name} home`}>
-            <span className="brand-mark">LD</span>
-            <span>{businessInfo.name}</span>
+            <Image
+              className="brand-logo brand-logo-footer"
+              src="/brand/lifes-details-logo-horizontal.svg"
+              alt=""
+              width={560}
+              height={160}
+            />
           </Link>
           <p className="muted">
             Mobile car detailing in {businessInfo.serviceArea.city}{" "}
