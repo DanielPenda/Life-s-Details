@@ -31,7 +31,7 @@ export function addUtcDays(date: Date, days: number) {
   return result;
 }
 
-export async function getAvailableSchedule(serviceSlug: string, addOnSlugs: string[] = [], horizonDays = 365) {
+export async function getAvailableSchedule(serviceSlug: string, addOnSlugs: string[] = [], horizonDays = 365, locale = "en-BE") {
   const today = dateOnly(new Date().toISOString().slice(0, 10));
   const horizon = addUtcDays(today, horizonDays + 1);
   const [service, addOns, availability, bookings] = await Promise.all([
@@ -75,7 +75,7 @@ export async function getAvailableSchedule(serviceSlug: string, addOnSlugs: stri
     if (!slots.length) return [];
     return [{
       date,
-      label: window.date.toLocaleDateString("en-BE", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }),
+      label: window.date.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }),
       openTime: minutesToTime(window.startMinute),
       closeTime: minutesToTime(window.endMinute),
       slots,

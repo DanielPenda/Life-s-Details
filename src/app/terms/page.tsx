@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
+import { getLocale } from "@/i18n/server";
+import { createTranslator } from "@/i18n/translations";
 
-export const metadata: Metadata = {
-  title: "Terms",
-  description: "Terms placeholder for Life's Details.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = createTranslator(await getLocale());
+  return { title: t("meta.termsTitle"), description: t("meta.termsDescription") };
+}
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const t = createTranslator(await getLocale());
   return (
     <section className="section">
       <div className="container narrow legal-copy">
-        <p className="eyebrow">Terms</p>
-        <h1>Terms placeholder</h1>
-        <p>
-          This page will cover booking, cancellation, weather, access, and
-          payment expectations. It must be reviewed before production launch.
-        </p>
+        <p className="eyebrow">{t("terms.eyebrow")}</p>
+        <h1>{t("terms.title")}</h1>
+        <p>{t("terms.copy")}</p>
       </div>
     </section>
   );

@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { useRef, useState, type CSSProperties } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { useTranslations } from "@/i18n/locale-provider";
 
 export function BeforeAfterComparison() {
+  const t = useTranslations();
   const [position, setPosition] = useState(52);
   const rangeInteractionTracked = useRef(false);
 
@@ -22,7 +24,7 @@ export function BeforeAfterComparison() {
         style={{ "--comparison-position": `${position}%` } as CSSProperties}
       >
         <Image
-          alt="Clean white sports car used as an after-detail placeholder"
+          alt={t("comparison.alt")}
           className="comparison-image"
           fill
           sizes="(min-width: 900px) 760px, 100vw"
@@ -37,13 +39,13 @@ export function BeforeAfterComparison() {
             src="/images/comparison-placeholder.jpg"
           />
         </div>
-        <span className="comparison-label comparison-label-before">Before</span>
-        <span className="comparison-label comparison-label-after">After</span>
+        <span className="comparison-label comparison-label-before">{t("comparison.before")}</span>
+        <span className="comparison-label comparison-label-after">{t("comparison.after")}</span>
         <span className="comparison-divider" aria-hidden="true">
           <span className="comparison-handle">&#8596;</span>
         </span>
         <input
-          aria-label="Compare before and after detailing preview"
+          aria-label={t("comparison.aria")}
           className="comparison-range"
           max="100"
           min="0"
@@ -69,7 +71,7 @@ export function BeforeAfterComparison() {
           value={position}
         />
       </div>
-      <div className="comparison-controls" aria-label="Comparison view controls">
+      <div className="comparison-controls" aria-label={t("comparison.controls")}>
         <button
           className="comparison-control"
           onClick={() => {
@@ -78,7 +80,7 @@ export function BeforeAfterComparison() {
           }}
           type="button"
         >
-          Show before
+          {t("comparison.showBefore")}
         </button>
         <button
           className="comparison-control"
@@ -88,7 +90,7 @@ export function BeforeAfterComparison() {
           }}
           type="button"
         >
-          Show after
+          {t("comparison.showAfter")}
         </button>
       </div>
     </div>

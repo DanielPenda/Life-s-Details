@@ -15,43 +15,50 @@ import { BeforeAfterComparison } from "@/components/before-after-comparison";
 import { TrackedLink } from "@/components/tracked-link";
 import { businessInfo, contactLinks } from "@/config/business";
 import { landingPageContent } from "@/config/content";
-import { services } from "@/config/services";
+import { getLocalizedServices } from "@/i18n/content";
+import { getLocale } from "@/i18n/server";
+import { createTranslator, type TranslationKey } from "@/i18n/translations";
 import { analyticsEvents } from "@/lib/analytics";
 
 const processSteps = [
   {
-    title: "Choose a service",
-    description: "Pick the package that best matches your vehicle today.",
+    title: "home.step1Title",
+    description: "home.step1Copy",
   },
   {
-    title: "Send vehicle details",
-    description: "Tell us the size, condition and location of your car.",
+    title: "home.step2Title",
+    description: "home.step2Copy",
   },
   {
-    title: "Receive confirmation",
-    description: "We confirm the scope, estimate and suitable appointment.",
+    title: "home.step3Title",
+    description: "home.step3Copy",
   },
   {
-    title: "Enjoy a cleaner car",
-    description: "We come to the agreed location and take care of the detail.",
+    title: "home.step4Title",
+    description: "home.step4Copy",
   },
 ] as const;
 
-export default function HomePage() {
+const trustItems = ["home.trust.mobile", "home.trust.packages", "home.trust.workmanship", "home.trust.area"] as const;
+const faqs = Array.from({ length: 8 }, (_, index) => ({
+  question: `home.faq${index + 1}q` as TranslationKey,
+  answer: `home.faq${index + 1}a` as TranslationKey,
+}));
+
+export default async function HomePage() {
+  const locale = await getLocale();
+  const t = createTranslator(locale);
+  const services = getLocalizedServices(locale);
   return (
     <>
       <section className="hero" aria-labelledby="hero-title">
         <div className="container hero-grid">
           <div className="hero-content">
             <p className="eyebrow">
-              Mobile car detailing in {businessInfo.serviceArea.city}
+              {t("home.heroEyebrow", { city: businessInfo.serviceArea.city })}
             </p>
-            <h1 id="hero-title">A cleaner car, without losing your day.</h1>
-            <p className="hero-copy">
-              Thoughtful interior and exterior detailing brought to an agreed
-              location in Aalter and nearby areas. Clear packages, practical
-              advice and no unnecessary upselling.
-            </p>
+            <h1 id="hero-title">{t("home.heroTitle")}</h1>
+            <p className="hero-copy">{t("home.heroCopy")}</p>
             <div className="hero-actions">
               <TrackedLink
                 className="button button-primary"
@@ -59,27 +66,27 @@ export default function HomePage() {
                 eventProperties={{ placement: "hero" }}
                 href="/book"
               >
-                Book a Detail
+                {t("home.book")}
                 <ArrowRight size={18} aria-hidden="true" />
               </TrackedLink>
               <Link className="button button-secondary" href="#services">
-                View Services
+                {t("home.viewServices")}
               </Link>
             </div>
             <div className="hero-meta">
               <span>
                 <MapPin size={17} aria-hidden="true" />
-                Aalter 9880 + nearby areas
+                {t("home.areaShort")}
               </span>
               <span>
                 <ShieldCheck size={17} aria-hidden="true" />
-                Final scope agreed before work starts
+                {t("home.scope")}
               </span>
             </div>
           </div>
           <div className="hero-media">
             <Image
-              alt="Detailed dark sports car photographed at sunset"
+              alt={t("home.heroAlt")}
               className="hero-image"
               fill
               priority
@@ -88,18 +95,18 @@ export default function HomePage() {
             />
             <div className="hero-media-caption">
               <Sparkles size={20} aria-hidden="true" />
-              <span>Attention to every detail</span>
+              <span>{t("home.heroCaption")}</span>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="trust-strip" aria-label="Service highlights">
+      <section className="trust-strip" aria-label={t("home.highlights")}>
         <div className="container trust-list">
-          {landingPageContent.trustItems.map((item) => (
+          {trustItems.map((item) => (
             <span key={item}>
               <CheckCircle2 size={18} aria-hidden="true" />
-              {item}
+              {t(item)}
             </span>
           ))}
         </div>
@@ -109,12 +116,11 @@ export default function HomePage() {
         <div className="container">
           <div className="section-heading section-heading-row">
             <div>
-              <p className="eyebrow">Services</p>
-              <h2 id="services-title">The right level of care for your car.</h2>
+              <p className="eyebrow">{t("nav.services")}</p>
+              <h2 id="services-title">{t("home.servicesTitle")}</h2>
             </div>
             <p className="section-intro">
-              Start with the closest match. We confirm the final package after
-              understanding the vehicle size and condition.
+              {t("home.servicesIntro")}
             </p>
           </div>
           <div className="service-grid">
@@ -143,13 +149,13 @@ export default function HomePage() {
                 <div className="service-card-footer">
                   <p className="price">{service.priceLabel}</p>
                   <TrackedLink
-                    ariaLabel={`Start a ${service.name} enquiry`}
+                    ariaLabel={t("home.startService", { service: service.name })}
                     className="service-link"
                     event={analyticsEvents.serviceCardClick}
                     eventProperties={{ service: service.slug }}
                     href={`/book?service=${service.slug}`}
                   >
-                    Choose service
+                    {t("home.chooseService")}
                     <ChevronRight size={18} aria-hidden="true" />
                   </TrackedLink>
                 </div>
@@ -157,8 +163,7 @@ export default function HomePage() {
             ))}
           </div>
           <p className="pricing-note">
-            Starting prices are provisional and depend on vehicle size and
-            condition. Any revised estimate is discussed before extra work.
+            {t("home.pricingNote")}
           </p>
         </div>
       </section>
@@ -166,16 +171,12 @@ export default function HomePage() {
       <section className="section results-section" id="results" aria-labelledby="results-title">
         <div className="container results-layout">
           <div className="results-copy">
-            <p className="eyebrow eyebrow-light">Before &amp; after</p>
-            <h2 id="results-title">See what focused care can change.</h2>
-            <p>
-              Drag the control or use the buttons to explore the comparison.
-              This is temporary demonstration imagery and will be replaced by
-              genuine Life&apos;s Details work with publication consent.
-            </p>
+            <p className="eyebrow eyebrow-light">{t("home.beforeAfter")}</p>
+            <h2 id="results-title">{t("home.resultsTitle")}</h2>
+            <p>{t("home.resultsCopy")}</p>
             <div className="results-proof-note">
               <Sparkles size={20} aria-hidden="true" />
-              <span>Real project photography is the next content priority.</span>
+              <span>{t("home.resultsNote")}</span>
             </div>
           </div>
           <BeforeAfterComparison />
@@ -185,15 +186,15 @@ export default function HomePage() {
       <section className="section process-section" id="process" aria-labelledby="process-title">
         <div className="container">
           <div className="section-heading centered-heading">
-            <p className="eyebrow">How it works</p>
-            <h2 id="process-title">From enquiry to clean car in four steps.</h2>
+            <p className="eyebrow">{t("nav.process")}</p>
+            <h2 id="process-title">{t("home.processTitle")}</h2>
           </div>
           <ol className="process-grid">
             {processSteps.map((step, index) => (
               <li key={step.title}>
                 <span className="process-number">{index + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
+                <h3>{t(step.title)}</h3>
+                <p>{t(step.description)}</p>
               </li>
             ))}
           </ol>
@@ -211,22 +212,17 @@ export default function HomePage() {
             </div>
           </div>
           <div className="area-copy">
-            <p className="eyebrow">Service area</p>
-            <h2 id="area-title">Based around Aalter 9880.</h2>
-            <p>
-              Mobile appointments are focused within approximately {landingPageContent.serviceRadiusKm} km
-              of Aalter. Nearby locations are considered individually so the
-              travel time and setup stay practical.
-            </p>
+            <p className="eyebrow">{t("home.serviceArea")}</p>
+            <h2 id="area-title">{t("home.areaTitle")}</h2>
+            <p>{t("home.areaCopy", { radius: landingPageContent.serviceRadiusKm })}</p>
             <div className="area-note">
               <MapPin size={20} aria-hidden="true" />
               <span>
-                Travel fees may apply outside the core zone. Share your postcode
-                and we will confirm before booking.
+                {t("home.areaNote")}
               </span>
             </div>
             <Link className="text-link" href="/contact">
-              Check your location
+              {t("home.checkLocation")}
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
           </div>
@@ -237,17 +233,14 @@ export default function HomePage() {
         <div className="container faq-layout">
           <div className="faq-heading">
             <p className="eyebrow">FAQ</p>
-            <h2 id="faq-title">Useful answers before you book.</h2>
-            <p>
-              Still unsure which service fits? A quick WhatsApp message is the
-              easiest way to ask.
-            </p>
+            <h2 id="faq-title">{t("home.faqTitle")}</h2>
+            <p>{t("home.faqIntro")}</p>
           </div>
           <div className="faq-list">
-            {landingPageContent.faqs.map((faq) => (
+            {faqs.map((faq) => (
               <details key={faq.question}>
-                <summary>{faq.question}</summary>
-                <p>{faq.answer}</p>
+                <summary>{t(faq.question)}</summary>
+                <p>{t(faq.answer)}</p>
               </details>
             ))}
           </div>
@@ -257,13 +250,13 @@ export default function HomePage() {
       <section className="final-cta" aria-labelledby="final-cta-title">
         <div className="container final-cta-inner">
           <div>
-            <p className="eyebrow eyebrow-light">Ready when you are</p>
-            <h2 id="final-cta-title">Give your car the attention it deserves.</h2>
-            <p>Start an enquiry today. We will confirm the right service, estimate and timing with you.</p>
+            <p className="eyebrow eyebrow-light">{t("home.ready")}</p>
+            <h2 id="final-cta-title">{t("home.finalTitle")}</h2>
+            <p>{t("home.finalCopy")}</p>
           </div>
           <div className="final-cta-actions">
             <Link className="button button-light" href="/book">
-              Book your detail
+              {t("home.bookYourDetail")}
               <ArrowRight size={18} aria-hidden="true" />
             </Link>
             <TrackedLink
@@ -274,7 +267,7 @@ export default function HomePage() {
               target="_blank"
             >
               <MessageCircle size={18} aria-hidden="true" />
-              Ask on WhatsApp
+              {t("home.askWhatsapp")}
             </TrackedLink>
           </div>
         </div>

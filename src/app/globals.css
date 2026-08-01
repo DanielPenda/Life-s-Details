@@ -212,6 +212,50 @@ h3 {
   width: 196px;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.language-switcher {
+  display: inline-flex;
+  min-width: 64px;
+  height: 44px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  padding: 0 7px;
+  color: var(--foreground);
+}
+
+.language-switcher svg {
+  flex: none;
+  color: var(--primary);
+}
+
+.language-switcher select {
+  min-width: 30px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 850;
+  outline: 0;
+}
+
+.language-switcher:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
 .desktop-nav {
   display: none;
   align-items: center;

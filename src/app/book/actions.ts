@@ -6,6 +6,8 @@ import { createBookingReference, hashBookingAccessToken } from "@/lib/booking-re
 import { parseBookingFormData } from "@/lib/booking-schema";
 import { sendBookingNotifications } from "@/lib/email";
 import { env } from "@/lib/env";
+import { parseLocale } from "@/i18n/config";
+import { createTranslator } from "@/i18n/translations";
 import { prisma } from "@/lib/prisma";
 import { checkBookingRateLimit } from "@/lib/rate-limit";
 import { ACTIVE_SLOT_STATUSES, dateOnly, deriveTimeWindow, timeToMinutes } from "@/lib/availability";
@@ -27,6 +29,8 @@ export async function submitBookingRequest(
   _previousState: BookingActionState,
   formData: FormData,
 ): Promise<BookingActionState> {
+  const locale = parseLocale(formData.get("locale")) ?? "en";
+  const t = createTranslator(locale);
   const requestHeaders = await headers();
   const clientKey =
     requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -37,7 +41,7 @@ export async function submitBookingRequest(
   if (!limit.allowed) {
     return {
       status: "error",
-      message: `Too many booking attempts. Please try again in about ${Math.ceil(limit.retryAfterSeconds / 60)} minutes.`,
+      message: t("action.rateLimit", { minutes: Math.ceil(limit.retryAfterSeconds / 60) }),
     };
   }
 
@@ -45,7 +49,7 @@ export async function submitBookingRequest(
   if (!parsed.success) {
     return {
       status: "error",
-      message: "Please review the highlighted details before sending your request.",
+      message: t("action.review"),
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -74,11 +78,11 @@ export async function submitBookingRequest(
     ]);
 
     if (!service) {
-      return { status: "error", message: "That service is no longer available. Please choose another package." };
+      return { status: "error", message: t("action.serviceGone") };
     }
 
     if (selectedAddOns.length !== new Set(input.addOnSlugs).size) {
-      return { status: "error", message: "One of the selected add-ons is no longer available." };
+      return { status: "error", message: t("action.addonGone") };
     }
 
     const addOnTotal = selectedAddOns.reduce((total, addOn) => total + Number(addOn.price), 0);
@@ -87,7 +91,7 @@ export async function submitBookingRequest(
     const durationMinutes = service.estimatedDurationMinutes + selectedAddOns.reduce((total, addOn) => total + addOn.estimatedDurationMinutes, 0);
     const appointmentStartAt = brusselsLocalToUtc(input.preferredDate, input.appointmentTime);
     const appointmentEndAt = appointmentStartAt ? new Date(appointmentStartAt.getTime() + durationMinutes * 60000) : null;
-    if (!appointmentStartAt || !appointmentEndAt || appointmentStartAt <= new Date()) return { status: "error", message: "That appointment time is no longer available. Please choose another slot." };
+    if (!appointmentStartAt || !appointmentEndAt || appointmentStartAt <= new Date()) return { status: "error", message: t("action.slotGone") };
     const created = await prisma.$transaction(async (tx) => {
       const window = await tx.workAvailability.findUnique({ where: { date: dateOnly(input.preferredDate) } });
       const startMinute = timeToMinutes(input.appointmentTime);
@@ -142,7 +146,7 @@ export async function submitBookingRequest(
         },
       }, select: { publicReference: true } });
     });
-    if (!created) return { status: "error", message: "That appointment time was just taken or the day was closed. Please choose another available slot." };
+    if (!created) return { status: "error", message: t("action.slotClosed") };
 
     const url = confirmationUrl(created.publicReference, input.idempotencyKey);
     await sendBookingNotifications({
@@ -171,10 +175,10 @@ export async function submitBookingRequest(
     console.error("booking_request_failed", {
       reason: error instanceof Error ? error.message : "Unknown persistence error",
     });
-    if (error instanceof Error && error.message.includes("Booking_no_active_appointment_overlap")) return { status: "error", message: "That appointment time was just taken. Please choose another available slot." };
+    if (error instanceof Error && error.message.includes("Booking_no_active_appointment_overlap")) return { status: "error", message: t("action.slotTaken") };
     return {
       status: "error",
-      message: `We could not save your request. Please contact us at ${businessInfo.phone.display} or try again shortly.`,
+      message: t("action.saveFailed", { phone: businessInfo.phone.display }),
     };
   }
 }

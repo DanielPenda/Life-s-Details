@@ -4,6 +4,7 @@ import { Check, Download, RefreshCw, Share, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { analyticsEvents, trackEvent } from "@/lib/analytics";
+import { useTranslations } from "@/i18n/locale-provider";
 
 type InstallChoice = {
   outcome: "accepted" | "dismissed";
@@ -30,6 +31,7 @@ function isAppleMobile() {
 
 export function AppLifecycle() {
   const pathname = usePathname();
+  const t = useTranslations();
   const [ready, setReady] = useState(false);
   const [installed, setInstalled] = useState(false);
   const [installPrompt, setInstallPrompt] =
@@ -158,11 +160,11 @@ export function AppLifecycle() {
         <button
           className={`pwa-install-trigger${waitingWorker ? " pwa-install-trigger-raised" : ""}`}
           onClick={() => void requestInstall()}
-          title="Install Life's Details"
+          title={t("pwa.installTitle")}
           type="button"
         >
           <Download aria-hidden="true" size={18} />
-          Install app
+          {t("pwa.install")}
         </button>
       ) : null}
 
@@ -171,13 +173,13 @@ export function AppLifecycle() {
           <div>
             <RefreshCw aria-hidden="true" size={20} />
             <span>
-              <strong>Update available</strong>
-              <small>A newer release is ready.</small>
+              <strong>{t("pwa.updateAvailable")}</strong>
+              <small>{t("pwa.updateReady")}</small>
             </span>
           </div>
           <button className="button button-light" onClick={applyUpdate} type="button">
             <RefreshCw aria-hidden="true" size={17} />
-            Update now
+            {t("pwa.updateNow")}
           </button>
         </section>
       ) : null}
@@ -191,10 +193,10 @@ export function AppLifecycle() {
             role="dialog"
           >
             <button
-              aria-label="Close install instructions"
+              aria-label={t("pwa.close")}
               className="pwa-dialog-close"
               onClick={() => setShowInstallHelp(false)}
-              title="Close"
+              title={t("pwa.closeTitle")}
               type="button"
             >
               <X aria-hidden="true" size={20} />
@@ -204,11 +206,11 @@ export function AppLifecycle() {
             ) : (
               <Download aria-hidden="true" size={25} />
             )}
-            <h2 id="install-app-title">Install Life&apos;s Details</h2>
+            <h2 id="install-app-title">{t("pwa.installTitle")}</h2>
             <p>
               {appleMobile
-                ? "Tap Share in Safari, then choose Add to Home Screen."
-                : "Open your browser menu and choose Install app or Add to Home screen."}
+                ? t("pwa.iosHelp")
+                : t("pwa.browserHelp")}
             </p>
             <button
               className="button button-primary"
@@ -216,7 +218,7 @@ export function AppLifecycle() {
               type="button"
             >
               <Check aria-hidden="true" size={18} />
-              Got it
+              {t("pwa.gotIt")}
             </button>
           </section>
         </div>

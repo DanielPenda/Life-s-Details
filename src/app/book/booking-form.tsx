@@ -5,6 +5,8 @@ import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, LoaderCircle, Shiel
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { type FieldPath, get, useForm } from "react-hook-form";
+import { useLocale, useTranslations } from "@/i18n/locale-provider";
+import type { TranslationKey } from "@/i18n/translations";
 import { bookingRequestSchema, type BookingRequestInput } from "@/lib/booking-schema";
 import { submitBookingRequest, type BookingActionState } from "./actions";
 
@@ -24,7 +26,7 @@ type AddOnOption = {
   readonly price: number;
 };
 
-const steps = ["Service", "Vehicle", "Location", "Timing", "Contact", "Review"];
+const steps = ["booking.step.service", "booking.step.vehicle", "booking.step.location", "booking.step.timing", "booking.step.contact", "booking.step.review"] as const;
 const initialBookingActionState: BookingActionState = { status: "idle" };
 const stepFields: FieldPath<BookingRequestInput>[][] = [
   ["serviceSlug"],
@@ -68,9 +70,21 @@ const defaultValues: BookingRequestInput = {
   website: "",
 };
 
-function formatChoice(value: string) {
-  return value.toLowerCase().replaceAll("_", " ").replaceAll("-", " ");
-}
+const validationMessageKeys: Record<string, TranslationKey> = {
+  "Choose a service.": "validation.service",
+  "Enter the vehicle make.": "validation.make",
+  "Enter the vehicle model.": "validation.model",
+  "Enter the service address.": "validation.address",
+  "Enter a four-digit Belgian postcode.": "validation.postcode",
+  "Enter the city or town.": "validation.city",
+  "Choose a preferred date.": "validation.date",
+  "Choose an available start time.": "validation.time",
+  "Enter your name.": "validation.name",
+  "Enter a valid phone number.": "validation.phone",
+  "Enter a valid email address.": "validation.email",
+  "Consent is required to process the request.": "validation.consent",
+  "Choose today or a future date.": "validation.future",
+};
 
 export function BookingForm({
   services,
@@ -82,6 +96,8 @@ export function BookingForm({
   initialService: string;
 }) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations();
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState(0);
   const [actionState, formAction] = useActionState(
@@ -124,7 +140,7 @@ export function BookingForm({
   useEffect(() => {
     setValue("preferredDate", ""); setValue("appointmentTime", "");
     if (!values.serviceSlug) { setSchedule({ durationMinutes: 0, days: [] }); return; }
-    const controller = new AbortController(); const params = new URLSearchParams({ service: values.serviceSlug });
+    const controller = new AbortController(); const params = new URLSearchParams({ service: values.serviceSlug, locale });
     selectedAddOnKey.split(",").filter(Boolean).forEach((slug) => params.append("addOn", slug));
     setIsLoadingSchedule(true);
     fetch(`/api/availability?${params}`, { cache: "no-store", signal: controller.signal })
@@ -132,7 +148,7 @@ export function BookingForm({
       .then(setSchedule).catch((error: unknown) => { if (!(error instanceof DOMException && error.name === "AbortError")) setSchedule({ durationMinutes: 0, days: [] }); })
       .finally(() => { if (!controller.signal.aborted) setIsLoadingSchedule(false); });
     return () => controller.abort();
-  }, [selectedAddOnKey, setValue, values.serviceSlug]);
+  }, [locale, selectedAddOnKey, setValue, values.serviceSlug]);
 
   const goNext = async () => {
     const valid = await trigger(stepFields[step], { shouldFocus: true });
@@ -148,23 +164,28 @@ export function BookingForm({
     startTransition(() => formAction(data));
   });
 
-  const errorFor = (name: FieldPath<BookingRequestInput>) =>
-    (get(errors, name)?.message as string | undefined) ?? actionState.fieldErrors?.[name]?.[0];
+  const errorFor = (name: FieldPath<BookingRequestInput>) => {
+    const message = (get(errors, name)?.message as string | undefined) ?? actionState.fieldErrors?.[name]?.[0];
+    const key = message ? validationMessageKeys[message] : undefined;
+    return key ? t(key) : message;
+  };
+
+  const formatChoice = (value: string) => t(`choice.${value}` as TranslationKey);
 
   return (
     <div className="booking-workspace">
-      <nav aria-label="Booking progress" className="booking-progress">
+      <nav aria-label={t("booking.progress")} className="booking-progress">
         <ol>
           {steps.map((label, index) => (
             <li aria-current={index === step ? "step" : undefined} key={label}>
               <button
-                aria-label={`Go to ${label}`}
+                aria-label={t("booking.goTo", { step: t(label) })}
                 disabled={index > step}
                 onClick={() => index <= step && setStep(index)}
                 type="button"
               >
                 <span>{index < step ? <Check aria-hidden="true" size={15} /> : index + 1}</span>
-                <small>{label}</small>
+                <small>{t(label)}</small>
               </button>
             </li>
           ))}
@@ -173,13 +194,14 @@ export function BookingForm({
 
       <form className="booking-form" noValidate onSubmit={submit} ref={formRef}>
         <input {...register("idempotencyKey")} type="hidden" />
+        <input name="locale" type="hidden" value={locale} />
         <div aria-hidden="true" className="honeypot">
           <label htmlFor="website">Website</label>
           <input {...register("website")} autoComplete="off" id="website" tabIndex={-1} />
         </div>
 
         <section className="booking-step" hidden={step !== 0}>
-          <div className="step-heading"><span>Step 1 of 6</span><h2>Choose a service</h2><p>Start with the closest match. We can adjust it after reviewing your vehicle.</p></div>
+          <div className="step-heading"><span>{t("booking.stepCount", { step: 1 })}</span><h2>{t("booking.serviceTitle")}</h2><p>{t("booking.serviceCopy")}</p></div>
           <div className="choice-grid service-choice-grid">
             {services.map((service) => (
               <label className="choice-card" data-selected={values.serviceSlug === service.slug} key={service.slug}>
@@ -193,7 +215,7 @@ export function BookingForm({
           </div>
           {errorFor("serviceSlug") ? <p className="field-error">{errorFor("serviceSlug")}</p> : null}
           <fieldset className="booking-fieldset">
-            <legend>Optional add-ons</legend>
+            <legend>{t("booking.optionalAddons")}</legend>
             <div className="choice-grid addon-choice-grid">
               {addOns.map((addOn) => (
                 <label className="check-card" key={addOn.slug}>
@@ -207,82 +229,82 @@ export function BookingForm({
         </section>
 
         <section className="booking-step" hidden={step !== 1}>
-          <div className="step-heading"><span>Step 2 of 6</span><h2>Your vehicle</h2><p>A few practical details help us allow enough time.</p></div>
+          <div className="step-heading"><span>{t("booking.stepCount", { step: 2 })}</span><h2>{t("booking.vehicleTitle")}</h2><p>{t("booking.vehicleCopy")}</p></div>
           <div className="form-grid two-columns">
-            <Field label="Vehicle type" error={errorFor("vehicleType")}>
-              <select {...register("vehicleType")}><option value="small-car">Small car</option><option value="medium-car">Medium car</option><option value="large-car">Large car / SUV</option><option value="van">Van</option></select>
+            <Field label={t("booking.vehicleType")} error={errorFor("vehicleType")}>
+              <select {...register("vehicleType")}><option value="small-car">{t("booking.smallCar")}</option><option value="medium-car">{t("booking.mediumCar")}</option><option value="large-car">{t("booking.largeCar")}</option><option value="van">{t("booking.van")}</option></select>
             </Field>
-            <Field label="General condition" error={errorFor("vehicleCondition")}>
-              <select {...register("vehicleCondition")}><option value="LIGHT">Light dirt</option><option value="MODERATE">Moderate dirt</option><option value="HEAVY">Heavy dirt</option></select>
+            <Field label={t("booking.condition")} error={errorFor("vehicleCondition")}>
+              <select {...register("vehicleCondition")}><option value="LIGHT">{t("booking.lightDirt")}</option><option value="MODERATE">{t("booking.moderateDirt")}</option><option value="HEAVY">{t("booking.heavyDirt")}</option></select>
             </Field>
-            <Field label="Make" error={errorFor("vehicleMake")}><input {...register("vehicleMake")} autoComplete="off" placeholder="e.g. Volkswagen" /></Field>
-            <Field label="Model" error={errorFor("vehicleModel")}><input {...register("vehicleModel")} autoComplete="off" placeholder="e.g. Golf" /></Field>
-            <Field label="Colour (optional)"><input {...register("vehicleColour")} autoComplete="off" /></Field>
-            <Field label="Licence plate (optional)"><input {...register("licencePlateOptional")} autoCapitalize="characters" autoComplete="off" /></Field>
+            <Field label={t("booking.make")} error={errorFor("vehicleMake")}><input {...register("vehicleMake")} autoComplete="off" placeholder={t("booking.makeExample")} /></Field>
+            <Field label={t("booking.model")} error={errorFor("vehicleModel")}><input {...register("vehicleModel")} autoComplete="off" placeholder={t("booking.modelExample")} /></Field>
+            <Field label={t("booking.colour")}><input {...register("vehicleColour")} autoComplete="off" /></Field>
+            <Field label={t("booking.plate")}><input {...register("licencePlateOptional")} autoCapitalize="characters" autoComplete="off" /></Field>
           </div>
-          <fieldset className="booking-fieldset"><legend>Anything needing extra attention?</legend><div className="inline-checks">
-            <CheckOption label="Pet hair" registration={register("hasPetHair")} />
-            <CheckOption label="Seat stains" registration={register("hasStains")} />
-            <CheckOption label="Strong odour" registration={register("hasStrongOdour")} />
+          <fieldset className="booking-fieldset"><legend>{t("booking.extraAttention")}</legend><div className="inline-checks">
+            <CheckOption label={t("booking.petHair")} registration={register("hasPetHair")} />
+            <CheckOption label={t("booking.seatStains")} registration={register("hasStains")} />
+            <CheckOption label={t("booking.strongOdour")} registration={register("hasStrongOdour")} />
           </div></fieldset>
-          <Field label="Condition notes (optional)" hint="Please do not include sensitive personal information."><textarea {...register("conditionNotes")} maxLength={600} rows={4} /></Field>
+          <Field label={t("booking.conditionNotes")} hint={t("booking.noSensitive")}><textarea {...register("conditionNotes")} maxLength={600} rows={4} /></Field>
         </section>
 
         <section className="booking-step" hidden={step !== 2}>
-          <div className="step-heading"><span>Step 3 of 6</span><h2>Service location</h2><p>We currently work in Aalter and nearby areas. Travel fees may apply outside the core zone.</p></div>
+          <div className="step-heading"><span>{t("booking.stepCount", { step: 3 })}</span><h2>{t("booking.locationTitle")}</h2><p>{t("booking.locationCopy")}</p></div>
           <div className="form-grid">
-            <Field label="Street and number" error={errorFor("addressLine")}><input {...register("addressLine")} autoComplete="street-address" /></Field>
+            <Field label={t("booking.street")} error={errorFor("addressLine")}><input {...register("addressLine")} autoComplete="street-address" /></Field>
             <div className="form-grid postcode-grid">
-              <Field label="Postcode" error={errorFor("postcode")}><input {...register("postcode")} autoComplete="postal-code" inputMode="numeric" maxLength={4} /></Field>
-              <Field label="City or town" error={errorFor("city")}><input {...register("city")} autoComplete="address-level2" /></Field>
+              <Field label={t("booking.postcode")} error={errorFor("postcode")}><input {...register("postcode")} autoComplete="postal-code" inputMode="numeric" maxLength={4} /></Field>
+              <Field label={t("booking.city")} error={errorFor("city")}><input {...register("city")} autoComplete="address-level2" /></Field>
             </div>
-            <Field label="Where will we work?" error={errorFor("serviceLocationType")}><select {...register("serviceLocationType")}><option value="HOME">Home</option><option value="WORKPLACE">Workplace</option><option value="OTHER">Another location</option></select></Field>
+            <Field label={t("booking.workWhere")} error={errorFor("serviceLocationType")}><select {...register("serviceLocationType")}><option value="HOME">{t("booking.home")}</option><option value="WORKPLACE">{t("booking.workplace")}</option><option value="OTHER">{t("booking.otherLocation")}</option></select></Field>
           </div>
           <div className="form-grid two-columns">
-            <YesNo legend="Access to water" name="accessToWater" onChange={(value) => setValue("accessToWater", value)} value={values.accessToWater} />
-            <YesNo legend="Access to electricity" name="accessToElectricity" onChange={(value) => setValue("accessToElectricity", value)} value={values.accessToElectricity} />
+            <YesNo legend={t("booking.water")} name="accessToWater" onChange={(value) => setValue("accessToWater", value)} value={values.accessToWater} />
+            <YesNo legend={t("booking.electricity")} name="accessToElectricity" onChange={(value) => setValue("accessToElectricity", value)} value={values.accessToElectricity} />
           </div>
         </section>
 
         <section className="booking-step" hidden={step !== 3}>
-          <div className="step-heading"><span>Step 4 of 6</span><h2>Choose an available time</h2><p>Only days with enough uninterrupted time for this service are shown.</p></div>
-          {isLoadingSchedule ? <div className="slot-loading"><LoaderCircle aria-hidden="true" className="spin" size={19} />Checking availability...</div> : schedule.days.length ? <div className="slot-picker"><Field label="Available day" error={errorFor("preferredDate")}><select {...register("preferredDate")}><option value="">Choose a day</option>{schedule.days.map((day) => <option key={day.date} value={day.date}>{day.label} · {day.openTime}-{day.closeTime}</option>)}</select></Field>{values.preferredDate ? <fieldset className="booking-fieldset"><legend>Start time</legend><p className="slot-duration"><Clock3 aria-hidden="true" size={16} />Allows {Math.ceil(schedule.durationMinutes / 60 * 10) / 10} hours for your selection.</p><div className="time-slot-grid">{schedule.days.find((day) => day.date === values.preferredDate)?.slots.map((time) => <label data-selected={values.appointmentTime === time} key={time}><input {...register("appointmentTime")} type="radio" value={time} /><Clock3 aria-hidden="true" size={15} />{time}</label>)}</div>{errorFor("appointmentTime") ? <p className="field-error">{errorFor("appointmentTime")}</p> : null}</fieldset> : null}</div> : <div className="no-slots"><CalendarDays aria-hidden="true" size={25} /><strong>No suitable dates are open yet.</strong><span>Choose another service or check back after new working days are added.</span></div>}
+          <div className="step-heading"><span>{t("booking.stepCount", { step: 4 })}</span><h2>{t("booking.timingTitle")}</h2><p>{t("booking.timingCopy")}</p></div>
+          {isLoadingSchedule ? <div className="slot-loading"><LoaderCircle aria-hidden="true" className="spin" size={19} />{t("booking.checking")}</div> : schedule.days.length ? <div className="slot-picker"><Field label={t("booking.availableDay")} error={errorFor("preferredDate")}><select {...register("preferredDate")}><option value="">{t("booking.chooseDay")}</option>{schedule.days.map((day) => <option key={day.date} value={day.date}>{day.label} · {day.openTime}-{day.closeTime}</option>)}</select></Field>{values.preferredDate ? <fieldset className="booking-fieldset"><legend>{t("booking.startTime")}</legend><p className="slot-duration"><Clock3 aria-hidden="true" size={16} />{t("booking.duration", { hours: Math.ceil(schedule.durationMinutes / 60 * 10) / 10 })}</p><div className="time-slot-grid">{schedule.days.find((day) => day.date === values.preferredDate)?.slots.map((time) => <label data-selected={values.appointmentTime === time} key={time}><input {...register("appointmentTime")} type="radio" value={time} /><Clock3 aria-hidden="true" size={15} />{time}</label>)}</div>{errorFor("appointmentTime") ? <p className="field-error">{errorFor("appointmentTime")}</p> : null}</fieldset> : null}</div> : <div className="no-slots"><CalendarDays aria-hidden="true" size={25} /><strong>{t("booking.noDates")}</strong><span>{t("booking.noDatesCopy")}</span></div>}
         </section>
 
         <section className="booking-step" hidden={step !== 4}>
-          <div className="step-heading"><span>Step 5 of 6</span><h2>Contact details</h2><p>We use these details to review and respond to this request.</p></div>
+          <div className="step-heading"><span>{t("booking.stepCount", { step: 5 })}</span><h2>{t("booking.contactTitle")}</h2><p>{t("booking.contactCopy")}</p></div>
           <div className="form-grid two-columns">
-            <Field label="Name" error={errorFor("customerName")}><input {...register("customerName")} autoComplete="name" /></Field>
-            <Field label="Phone" error={errorFor("phone")}><input {...register("phone")} autoComplete="tel" inputMode="tel" /></Field>
-            <Field label="Email" error={errorFor("email")}><input {...register("email")} autoComplete="email" inputMode="email" type="email" /></Field>
-            <Field label="Preferred contact method" error={errorFor("preferredContactMethod")}><select {...register("preferredContactMethod")}><option value="WHATSAPP">WhatsApp</option><option value="PHONE">Phone</option><option value="EMAIL">Email</option></select></Field>
-            <Field label="Payment preference (optional)"><select {...register("paymentMethodPreference")}><option value="DISCUSS_LATER">Discuss later</option><option value="CASH">Cash</option><option value="CARD">Card</option><option value="BANK_TRANSFER">Bank transfer</option></select></Field>
-            <Field label="How did you find us? (optional)"><input {...register("acquisitionSource")} placeholder="e.g. Google, Instagram, referral" /></Field>
+            <Field label={t("booking.name")} error={errorFor("customerName")}><input {...register("customerName")} autoComplete="name" /></Field>
+            <Field label={t("booking.phone")} error={errorFor("phone")}><input {...register("phone")} autoComplete="tel" inputMode="tel" /></Field>
+            <Field label={t("booking.email")} error={errorFor("email")}><input {...register("email")} autoComplete="email" inputMode="email" type="email" /></Field>
+            <Field label={t("booking.preferredContact")} error={errorFor("preferredContactMethod")}><select {...register("preferredContactMethod")}><option value="WHATSAPP">WhatsApp</option><option value="PHONE">{t("contact.phone")}</option><option value="EMAIL">{t("contact.email")}</option></select></Field>
+            <Field label={t("booking.payment")}><select {...register("paymentMethodPreference")}><option value="DISCUSS_LATER">{t("booking.discussLater")}</option><option value="CASH">{t("booking.cash")}</option><option value="CARD">{t("booking.card")}</option><option value="BANK_TRANSFER">{t("booking.bankTransfer")}</option></select></Field>
+            <Field label={t("booking.source")}><input {...register("acquisitionSource")} placeholder={t("booking.sourceExample")} /></Field>
           </div>
           <div className="consent-list">
-            <label className="consent-option"><input {...register("customerConsent")} type="checkbox" /><span>I agree that Life&apos;s Details may use these details to process and respond to my booking request. <a href="/privacy" target="_blank">Privacy notice</a>.</span></label>
+            <label className="consent-option"><input {...register("customerConsent")} type="checkbox" /><span>{t("booking.consent")} <a href="/privacy" target="_blank">{t("booking.privacyNotice")}</a>.</span></label>
             {errorFor("customerConsent") ? <p className="field-error">{errorFor("customerConsent")}</p> : null}
-            <label className="consent-option"><input {...register("marketingConsent")} type="checkbox" /><span>Send me occasional offers and detailing reminders. Optional and unchecked by default.</span></label>
+            <label className="consent-option"><input {...register("marketingConsent")} type="checkbox" /><span>{t("booking.marketing")}</span></label>
           </div>
         </section>
 
         <section className="booking-step" hidden={step !== 5}>
-          <div className="step-heading"><span>Step 6 of 6</span><h2>Review your request</h2><p>Check the essentials before sending. Nothing is confirmed until we contact you.</p></div>
+          <div className="step-heading"><span>{t("booking.stepCount", { step: 6 })}</span><h2>{t("booking.reviewTitle")}</h2><p>{t("booking.reviewCopy")}</p></div>
           <div className="review-list">
-            <ReviewBlock title="Service" onEdit={() => setStep(0)}><strong>{selectedService?.name ?? "Not selected"}</strong><span>{selectedAddOns.length ? selectedAddOns.map((item) => item.name).join(", ") : "No add-ons"}</span><b>{estimate === null ? "Estimate after inspection" : `Estimated from €${estimate}`}</b></ReviewBlock>
-            <ReviewBlock title="Vehicle" onEdit={() => setStep(1)}><strong>{values.vehicleMake} {values.vehicleModel}</strong><span>{formatChoice(values.vehicleType)} · {formatChoice(values.vehicleCondition)} dirt</span></ReviewBlock>
-            <ReviewBlock title="Location" onEdit={() => setStep(2)}><strong>{values.addressLine}</strong><span>{values.postcode} {values.city} · {formatChoice(values.serviceLocationType)}</span></ReviewBlock>
-            <ReviewBlock title="Appointment time" onEdit={() => setStep(3)}><strong>{values.preferredDate || "No date selected"}</strong><span>{values.appointmentTime || "No time selected"}</span></ReviewBlock>
-            <ReviewBlock title="Contact" onEdit={() => setStep(4)}><strong>{values.customerName}</strong><span>{values.email} · {values.phone}</span><span>Reply by {formatChoice(values.preferredContactMethod)}</span></ReviewBlock>
+            <ReviewBlock title={t("booking.step.service")} onEdit={() => setStep(0)}><strong>{selectedService?.name ?? t("booking.notSelected")}</strong><span>{selectedAddOns.length ? selectedAddOns.map((item) => item.name).join(", ") : t("booking.noAddons")}</span><b>{estimate === null ? t("booking.afterInspection") : t("booking.estimatedFrom", { amount: estimate })}</b></ReviewBlock>
+            <ReviewBlock title={t("booking.step.vehicle")} onEdit={() => setStep(1)}><strong>{values.vehicleMake} {values.vehicleModel}</strong><span>{formatChoice(values.vehicleType)} · {t("booking.dirt", { condition: formatChoice(values.vehicleCondition) })}</span></ReviewBlock>
+            <ReviewBlock title={t("booking.step.location")} onEdit={() => setStep(2)}><strong>{values.addressLine}</strong><span>{values.postcode} {values.city} · {formatChoice(values.serviceLocationType)}</span></ReviewBlock>
+            <ReviewBlock title={t("booking.appointment")} onEdit={() => setStep(3)}><strong>{values.preferredDate || t("booking.noDate")}</strong><span>{values.appointmentTime || t("booking.noTime")}</span></ReviewBlock>
+            <ReviewBlock title={t("booking.step.contact")} onEdit={() => setStep(4)}><strong>{values.customerName}</strong><span>{values.email} · {values.phone}</span><span>{t("booking.replyBy", { method: formatChoice(values.preferredContactMethod) })}</span></ReviewBlock>
           </div>
-          <div className="request-notice"><ShieldCheck aria-hidden="true" /><p><strong>Your selected time is held with this request.</strong><span>We will review the vehicle and location details before confirming.</span></p></div>
+          <div className="request-notice"><ShieldCheck aria-hidden="true" /><p><strong>{t("booking.slotHeld")}</strong><span>{t("booking.reviewNotice")}</span></p></div>
         </section>
 
-        {actionState.status === "error" ? <div className="form-alert" role="alert"><strong>Request not sent</strong><span>{actionState.message}</span></div> : null}
+        {actionState.status === "error" ? <div className="form-alert" role="alert"><strong>{t("booking.requestNotSent")}</strong><span>{actionState.message}</span></div> : null}
 
         <div className="booking-actions">
-          {step > 0 ? <button className="button button-secondary" onClick={() => setStep((current) => current - 1)} type="button"><ArrowLeft aria-hidden="true" size={18} /> Back</button> : <span />}
-          {step < steps.length - 1 ? <button className="button button-primary" onClick={goNext} type="button">Continue <ArrowRight aria-hidden="true" size={18} /></button> : <button className="button button-primary" disabled={isSubmitting || !values.idempotencyKey} type="submit">{isSubmitting ? <LoaderCircle aria-hidden="true" className="spin" size={18} /> : <Check aria-hidden="true" size={18} />} {isSubmitting ? "Sending..." : "Send booking request"}</button>}
+          {step > 0 ? <button className="button button-secondary" onClick={() => setStep((current) => current - 1)} type="button"><ArrowLeft aria-hidden="true" size={18} /> {t("booking.back")}</button> : <span />}
+          {step < steps.length - 1 ? <button className="button button-primary" onClick={goNext} type="button">{t("booking.continue")} <ArrowRight aria-hidden="true" size={18} /></button> : <button className="button button-primary" disabled={isSubmitting || !values.idempotencyKey} type="submit">{isSubmitting ? <LoaderCircle aria-hidden="true" className="spin" size={18} /> : <Check aria-hidden="true" size={18} />} {isSubmitting ? t("booking.sending") : t("booking.send")}</button>}
         </div>
       </form>
     </div>
@@ -298,9 +320,11 @@ function CheckOption({ label, registration }: { label: string; registration: Ret
 }
 
 function YesNo({ legend, name, onChange, value }: { legend: string; name: string; onChange: (value: boolean) => void; value: boolean }) {
-  return <fieldset className="yes-no"><legend>{legend}</legend><div><label data-selected={value}><input checked={value} name={name} onChange={() => onChange(true)} type="radio" value="true" />Yes</label><label data-selected={!value}><input checked={!value} name={name} onChange={() => onChange(false)} type="radio" value="false" />No</label></div></fieldset>;
+  const t = useTranslations();
+  return <fieldset className="yes-no"><legend>{legend}</legend><div><label data-selected={value}><input checked={value} name={name} onChange={() => onChange(true)} type="radio" value="true" />{t("booking.yes")}</label><label data-selected={!value}><input checked={!value} name={name} onChange={() => onChange(false)} type="radio" value="false" />{t("booking.no")}</label></div></fieldset>;
 }
 
 function ReviewBlock({ title, onEdit, children }: { title: string; onEdit: () => void; children: React.ReactNode }) {
-  return <article className="review-block"><div><h3>{title}</h3><button onClick={onEdit} type="button">Edit</button></div>{children}</article>;
+  const t = useTranslations();
+  return <article className="review-block"><div><h3>{title}</h3><button onClick={onEdit} type="button">{t("booking.edit")}</button></div>{children}</article>;
 }
