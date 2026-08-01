@@ -1,7 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { authenticateOwner, updateOwnerPassword } from "@/lib/admin-auth";
+import {
+  authenticateOwner,
+  updateOwnerPassword,
+  updateOwnerPasswordWithRecoveryToken,
+} from "@/lib/admin-auth";
 
 export async function loginOwner(_state: { error?: string }, formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -17,12 +21,16 @@ export async function resetOwnerPassword(
   formData: FormData,
 ) {
   const accessToken = String(formData.get("accessToken") ?? "");
+  const tokenHash = String(formData.get("tokenHash") ?? "");
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("confirmation") ?? "");
-  if (!accessToken) return { error: "This recovery link is invalid or has expired." };
+  if (!accessToken && !tokenHash) return { error: "This recovery link is invalid or has expired." };
   if (password.length < 12) return { error: "Use at least 12 characters for the new password." };
   if (password !== confirmation) return { error: "The passwords do not match." };
-  if (!(await updateOwnerPassword(accessToken, password))) {
+  const updated = tokenHash
+    ? await updateOwnerPasswordWithRecoveryToken(tokenHash, password)
+    : await updateOwnerPassword(accessToken, password);
+  if (!updated) {
     return { error: "The recovery link is invalid or has expired." };
   }
   return { success: true };

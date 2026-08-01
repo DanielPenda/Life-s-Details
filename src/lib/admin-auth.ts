@@ -62,6 +62,21 @@ export async function updateOwnerPassword(accessToken: string, password: string)
   return response.ok;
 }
 
+export async function updateOwnerPasswordWithRecoveryToken(tokenHash: string, password: string) {
+  const config = authConfig();
+  const response = await fetch(`${config.url}/auth/v1/verify`, {
+    method: "POST",
+    headers: { apikey: config.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ token_hash: tokenHash, type: "recovery" }),
+    cache: "no-store",
+  });
+  if (!response.ok) return false;
+
+  const session = (await response.json()) as { access_token?: string; user?: SupabaseUser };
+  if (!session.access_token || session.user?.email?.toLowerCase() !== config.ownerEmail) return false;
+  return updateOwnerPassword(session.access_token, password);
+}
+
 export async function getAdminSession(): Promise<SupabaseUser | null> {
   const config = authConfig();
   const token = (await cookies()).get(accessCookie)?.value;

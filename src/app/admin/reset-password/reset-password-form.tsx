@@ -13,13 +13,16 @@ function SubmitButton() {
 
 export function ResetPasswordForm() {
   const [accessToken, setAccessToken] = useState("");
+  const [tokenHash, setTokenHash] = useState("");
   const [ready, setReady] = useState(false);
   const initialState: { error?: string; success?: boolean } = {};
   const [state, action] = useActionState(resetOwnerPassword, initialState);
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.slice(1));
+    const query = new URLSearchParams(window.location.search);
     if (hash.get("type") === "recovery") setAccessToken(hash.get("access_token") ?? "");
+    if (query.get("type") === "recovery") setTokenHash(query.get("token_hash") ?? "");
     window.history.replaceState(null, "", window.location.pathname);
     setReady(true);
   }, []);
@@ -28,9 +31,10 @@ export function ResetPasswordForm() {
 
   return <form action={action} className="admin-login-form">
     <input name="accessToken" type="hidden" value={accessToken} />
+    <input name="tokenHash" type="hidden" value={tokenHash} />
     <label className="form-field">New password<input autoComplete="new-password" minLength={12} name="password" required type="password" /></label>
     <label className="form-field">Confirm password<input autoComplete="new-password" minLength={12} name="confirmation" required type="password" /></label>
-    {ready && !accessToken ? <p className="form-alert" role="alert">This recovery link is invalid or has expired.</p> : null}
+    {ready && !accessToken && !tokenHash ? <p className="form-alert" role="alert">This recovery link is invalid or has expired.</p> : null}
     {state.error ? <p className="form-alert" role="alert">{state.error}</p> : null}
     <SubmitButton />
   </form>;
