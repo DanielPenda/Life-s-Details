@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AppLifecycle } from "@/components/app-lifecycle";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { businessInfo } from "@/config/business";
@@ -15,6 +16,15 @@ export const metadata: Metadata = {
     "Mobile interior and exterior car detailing in Aalter and nearby areas, with clear packages and direct booking support.",
   alternates: {
     canonical: "/",
+  },
+  applicationName: "Life's Details",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Life's Details",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
   },
   openGraph: {
     type: "website",
@@ -40,6 +50,10 @@ export const metadata: Metadata = {
       "Thoughtful mobile car detailing in Aalter and nearby areas.",
     images: ["/og.png"],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f3d3e",
 };
 
 const localBusinessJsonLd = {
@@ -75,6 +89,7 @@ export default function RootLayout({
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
+        <AppLifecycle />
       </body>
     </html>
   );

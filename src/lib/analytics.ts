@@ -5,6 +5,9 @@ export const analyticsEvents = {
   contactClick: "contact_click",
   beforeAfterInteraction: "before_after_interaction",
   bookingPageVisit: "booking_page_visit",
+  appInstallPrompt: "app_install_prompt",
+  appInstallAccepted: "app_install_accepted",
+  appUpdateApplied: "app_update_applied",
 } as const;
 
 export type AnalyticsEventName =

@@ -1600,6 +1600,135 @@ h3 {
   color: rgba(247, 244, 239, 0.52);
 }
 
+.pwa-install-trigger {
+  position: fixed;
+  z-index: 40;
+  right: 16px;
+  bottom: 16px;
+  display: inline-flex;
+  min-height: 46px;
+  max-width: calc(100vw - 32px);
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 6px;
+  background: var(--primary);
+  padding: 10px 15px;
+  color: #ffffff;
+  box-shadow: 0 12px 30px rgba(23, 32, 29, 0.2);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.pwa-install-trigger:hover {
+  background: var(--primary-strong);
+}
+
+.pwa-install-trigger-raised {
+  bottom: 106px;
+}
+
+.pwa-update-banner {
+  position: fixed;
+  z-index: 45;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--primary);
+  padding: 12px max(16px, calc((100vw - 1160px) / 2));
+  color: #ffffff;
+  box-shadow: 0 -12px 32px rgba(23, 32, 29, 0.18);
+}
+
+.pwa-update-banner > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.pwa-update-banner span {
+  display: grid;
+}
+
+.pwa-update-banner strong,
+.pwa-update-banner small {
+  overflow-wrap: anywhere;
+}
+
+.pwa-update-banner small {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.pwa-update-banner .button {
+  min-height: 44px;
+  flex: none;
+  padding: 10px 14px;
+}
+
+.pwa-dialog-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 17, 15, 0.64);
+  padding: 20px;
+}
+
+.pwa-install-dialog {
+  position: relative;
+  display: grid;
+  width: min(100%, 420px);
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 28px;
+  color: var(--foreground);
+  box-shadow: var(--shadow);
+}
+
+.pwa-install-dialog > svg {
+  color: var(--accent);
+}
+
+.pwa-install-dialog h2,
+.pwa-install-dialog p {
+  margin-bottom: 0;
+}
+
+.pwa-install-dialog h2 {
+  padding-right: 38px;
+  font-size: 1.65rem;
+}
+
+.pwa-install-dialog p {
+  color: var(--muted);
+}
+
+.pwa-dialog-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
 @media (min-width: 620px) {
   .hero-media {
     min-height: 280px;
@@ -1658,6 +1787,15 @@ h3 {
 
   .process-number {
     margin-bottom: 18px;
+  }
+
+  .pwa-install-trigger {
+    right: 24px;
+    bottom: 24px;
+  }
+
+  .pwa-install-trigger-raised {
+    bottom: 92px;
   }
 }
 
