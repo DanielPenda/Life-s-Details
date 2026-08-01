@@ -8,7 +8,8 @@ type SupabaseUser = { id: string; email?: string };
 
 function authConfig() {
   const url = env.NEXT_PUBLIC_SUPABASE_URL ?? env.SUPABASE_URL;
-  const key = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const key = env.LIFESDETAILS_SUPABASE_PUBLISHABLE_KEY
+    ?? env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     ?? env.SUPABASE_ANON_KEY
     ?? env.SUPABASE_PUBLISHABLE_KEY;
