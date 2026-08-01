@@ -7,7 +7,7 @@ const accessCookie = "lifesdetails_admin_access";
 type SupabaseUser = { id: string; email?: string };
 
 function authConfig() {
-  const url = env.NEXT_PUBLIC_SUPABASE_URL ?? env.SUPABASE_URL;
+  const url = env.LIFESDETAILS_SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL ?? env.SUPABASE_URL;
   const key = env.LIFESDETAILS_SUPABASE_PUBLISHABLE_KEY
     ?? env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY
