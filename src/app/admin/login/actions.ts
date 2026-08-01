@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import {
   authenticateOwner,
+  requestOwnerPasswordRecovery,
   updateOwnerPassword,
   updateOwnerPasswordWithRecoveryToken,
 } from "@/lib/admin-auth";
@@ -14,6 +15,14 @@ export async function loginOwner(_state: { error?: string }, formData: FormData)
     return { error: "The email or password was not recognised." };
   }
   redirect("/admin");
+}
+
+export async function sendOwnerRecoveryEmail(_state: { error?: string; success?: boolean }) {
+  void _state;
+  if (!(await requestOwnerPasswordRecovery())) {
+    return { error: "A recovery email could not be sent right now. Please try again shortly." };
+  }
+  return { success: true };
 }
 
 export async function resetOwnerPassword(

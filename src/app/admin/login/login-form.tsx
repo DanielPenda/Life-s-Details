@@ -1,6 +1,7 @@
 "use client";
 
 import { LoaderCircle, LockKeyhole } from "lucide-react";
+import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { loginOwner } from "./actions";
@@ -19,6 +20,7 @@ export function LoginForm() {
       <label className="form-field">Password<input autoComplete="current-password" name="password" required type="password" /></label>
       {state.error ? <p className="form-alert" role="alert">{state.error}</p> : null}
       <LoginButton />
+      <Link className="admin-login-link" href="/admin/forgot-password">Forgot password?</Link>
     </form>
   );
 }

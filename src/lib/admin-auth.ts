@@ -7,7 +7,7 @@ const accessCookie = "lifesdetails_admin_access";
 type SupabaseUser = { id: string; email?: string };
 
 function authConfig() {
-  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY || !env.ADMIN_EMAIL) {
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY || !env.ADMIN_EMAIL || !env.NEXT_PUBLIC_SITE_URL) {
     throw new Error("Admin authentication is not configured.");
   }
 
@@ -15,6 +15,7 @@ function authConfig() {
     url: env.NEXT_PUBLIC_SUPABASE_URL,
     key: env.SUPABASE_PUBLISHABLE_KEY,
     ownerEmail: env.ADMIN_EMAIL.toLowerCase(),
+    siteUrl: env.NEXT_PUBLIC_SITE_URL,
   };
 }
 
@@ -42,6 +43,18 @@ export async function authenticateOwner(email: string, password: string) {
     maxAge: session.expires_in,
   });
   return true;
+}
+
+export async function requestOwnerPasswordRecovery() {
+  const config = authConfig();
+  const redirectTo = `${config.siteUrl}/admin/reset-password`;
+  const response = await fetch(`${config.url}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    method: "POST",
+    headers: { apikey: config.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: config.ownerEmail }),
+    cache: "no-store",
+  });
+  return response.ok;
 }
 
 export async function updateOwnerPassword(accessToken: string, password: string) {
