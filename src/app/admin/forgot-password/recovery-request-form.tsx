@@ -15,7 +15,7 @@ export function RecoveryRequestForm() {
   const initialState: { error?: string; success?: boolean } = {};
   const [state, action] = useActionState(sendOwnerRecoveryEmail, initialState);
 
-  if (state.success) return <div className="admin-login-form"><CheckCircle2 aria-hidden="true" size={28} /><p>Recovery email sent. Use the newest message and open its link once.</p><Link className="button button-secondary admin-login-button" href="/admin/login">Back to sign in</Link></div>;
+  if (state.success) return <div className="admin-login-form"><CheckCircle2 aria-hidden="true" size={28} /><p>Recovery request accepted. Delivery can be delayed or rate-limited; use only the newest email when it arrives.</p><Link className="button button-secondary admin-login-button" href="/admin/login">Back to sign in</Link></div>;
 
   return <form action={action} className="admin-login-form">
     {state.error ? <p className="form-alert" role="alert">{state.error}</p> : null}
