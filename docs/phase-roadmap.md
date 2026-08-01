@@ -2,32 +2,28 @@
 
 ## Current Phase
 
-Phase 2 - Simple Booking Request
+Phase 3 - Admin Booking Management
 
-## Implemented
+## Phase 3 Checklist
 
-- Configurable announcement, service packages, service radius, FAQs, and business content.
-- Mobile-first landing page with hero, trust strip, services, comparison proof, process, service area, FAQs, and final CTA.
-- Accessible before/after slider with drag, touch, keyboard, and tap controls.
-- Functional mobile navigation drawer.
-- Direct WhatsApp, telephone, and email enquiry paths.
-- First-party analytics abstraction for conversion events.
-- Local-business metadata and structured data.
-- Six-step account-free booking request flow with review and edit controls.
-- PostgreSQL and Prisma schema for services, add-ons, bookings and status history.
-- Server-side Zod validation, honeypot, best-effort rate limiting and idempotency.
-- Token-protected booking confirmation page and public reference.
-- Owner and customer email notifications with development logging fallback.
-- Operational and optional marketing consent recorded separately.
+- [x] Single-owner Supabase Auth login and server-side route/action protection.
+- [x] Queue metrics for new, awaiting, upcoming, today, completed and cancelled work.
+- [x] Booking filters for status, date, customer/reference/postcode, service and payment.
+- [x] Complete customer, vehicle, service, location, timing and consent detail view.
+- [x] Status, schedule, estimate, final price, payment and internal-note actions.
+- [x] Confirmation email through the existing provider abstraction.
+- [x] Owner-ready WhatsApp confirmation template.
+- [x] Seven-day schedule without drag-and-drop complexity.
+- [x] Status history and field-level audit records.
+- [x] Mobile, empty, loading and validation states.
 
 ## Explicitly Out of Scope
 
-- Live appointment availability.
-- Customer or administrator authentication.
-- Payments, reviews, loyalty, referrals, memberships, or automation.
-- Third-party analytics or optional tracking cookies.
-- Admin booking management and status changes beyond the initial request.
+- Teams, staff roles and booking assignment.
+- Customer accounts, online payments or live availability.
+- Drag-and-drop scheduling and route optimisation.
+- Media uploads, content management, review automation or marketing workflows.
 
 ## Next Trigger
 
-Begin Phase 3 when database-provider or email-based handling becomes inconvenient, or when several requests per week make statuses and upcoming work difficult to track. Phase 3 should add secure owner authentication and mobile-first booking management.
+Begin Phase 4 only when ordinary changes to services, prices, FAQs, offers or proof images regularly require developer deployments.

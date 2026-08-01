@@ -55,6 +55,19 @@ enum PaymentMethodPreference {
   DISCUSS_LATER
 }
 
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  PAYCONIQ
+  OTHER
+}
+
 model Service {
   id                       String    @id @default(cuid())
   name                     String
@@ -117,6 +130,11 @@ model Booking {
   paymentMethodPreference PaymentMethodPreference?
   estimatedPrice          Decimal?                  @db.Decimal(10, 2)
   finalPrice              Decimal?                  @db.Decimal(10, 2)
+  appointmentStartAt      DateTime?
+  appointmentEndAt        DateTime?
+  paymentStatus           PaymentStatus             @default(UNPAID)
+  paymentMethod           PaymentMethod?
+  paidAt                  DateTime?
   acquisitionSource       String?
   customerConsent         Boolean
   consentAt               DateTime
@@ -128,9 +146,12 @@ model Booking {
   service                 Service                   @relation(fields: [serviceId], references: [id])
   addOns                   BookingAddOn[]
   statusHistory           BookingStatusHistory[]
+  auditLog                 BookingAuditLog[]
 
   @@index([status, createdAt])
   @@index([preferredDate])
+  @@index([appointmentStartAt])
+  @@index([paymentStatus])
   @@index([email])
 }
 
@@ -151,6 +172,21 @@ model BookingStatusHistory {
   note      String?
   createdAt DateTime      @default(now())
   booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+}
+
+model BookingAuditLog {
+  id         String   @id @default(cuid())
+  bookingId  String
+  action     String
+  field      String?
+  fromValue  String?
+  toValue    String?
+  note       String?
+  actorEmail String
+  createdAt  DateTime @default(now())
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId, createdAt])
 }

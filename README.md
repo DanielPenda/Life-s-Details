@@ -4,11 +4,11 @@ Mobile-first conversion website for Life's Details, a mobile car-detailing busin
 
 ## Current Phase
 
-Phase 2 - Simple Booking Request.
+Phase 3 - Admin Booking Management.
 
-The website now accepts structured six-step booking requests, stores them in PostgreSQL, records initial status history, limits accidental duplicate submissions, and sends owner/customer notifications through a replaceable email adapter.
+The website accepts structured booking requests and now gives the single owner a protected, mobile-first booking desk for scheduling, lifecycle updates, payment records, internal notes and audited changes.
 
-Customer accounts, admin management, payments, live availability, and marketing automation remain intentionally out of scope. Every request requires manual owner confirmation.
+Customer accounts, online payments, live availability, teams and marketing automation remain intentionally out of scope. Every request still requires manual owner confirmation.
 
 ## Local Setup
 
@@ -23,6 +23,9 @@ Copy `.env.example` to `.env.local`, then configure a PostgreSQL database:
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/lifes_details?sslmode=require
 EMAIL_PROVIDER=log
+NEXT_PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
+ADMIN_EMAIL=owner@example.com
 ```
 
 Prepare the database:
@@ -33,7 +36,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-For production, run `pnpm db:deploy` during deployment. Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, and a verified `EMAIL_FROM` value when real email delivery is required. The default `log` provider records only recipient and subject metadata during development.
+Create exactly one matching user in Supabase Auth, then run `pnpm db:deploy` during deployment. Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, and a verified `EMAIL_FROM` value when real email delivery is required. The default `log` provider records only recipient and subject metadata.
 
 ## Validation
 
@@ -44,14 +47,15 @@ pnpm test
 pnpm build
 ```
 
-## Phase 2 Booking
+## Phase 3 Administration
 
-- Schema and migration: `prisma/schema.prisma` and `prisma/migrations/`
-- Service and add-on seed data: `prisma/seed.mjs`
-- Shared validation: `src/lib/booking-schema.ts`
-- Booking form: `src/app/book/booking-form.tsx`
-- Persistence action: `src/app/book/actions.ts`
-- Email provider abstraction: `src/lib/email.ts`
+- Auth boundary: `src/lib/admin-auth.ts`
+- Admin validation and time conversion: `src/lib/admin-booking.ts`
+- Dashboard and filters: `src/app/admin/page.tsx`
+- Booking lifecycle actions: `src/app/admin/actions.ts`
+- Detail workflow: `src/app/admin/bookings/[reference]/page.tsx`
+- Weekly schedule: `src/app/admin/calendar/page.tsx`
+- Schema and audit migration: `prisma/schema.prisma` and `prisma/migrations/`
 
 The current package prices, add-on prices, 20 km service radius, payment methods, retention period, social links, and legal-business details must be confirmed by the owner before public launch.
 
@@ -79,4 +83,4 @@ Tracked events:
 - `/privacy`
 - `/terms`
 
-The `/admin` placeholder remains reserved for Phase 3 and contains no management functionality. Booking records are managed through the database provider until the admin phase is justified.
+All `/admin` data pages and mutations verify the Supabase session and the configured single owner email on the server. Search engines are blocked from the admin area by metadata and `robots.txt`.

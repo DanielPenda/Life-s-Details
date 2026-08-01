@@ -88,3 +88,41 @@ export async function sendBookingNotifications(booking: BookingEmail) {
 
   await Promise.all([deliver(customerMessage), deliver(ownerMessage)]);
 }
+
+export async function sendBookingConfirmation({
+  customerEmail,
+  customerName,
+  reference,
+  serviceName,
+  appointmentStartAt,
+  address,
+}: {
+  customerEmail: string;
+  customerName: string;
+  reference: string;
+  serviceName: string;
+  appointmentStartAt: Date;
+  address: string;
+}) {
+  const appointment = new Intl.DateTimeFormat("en-BE", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "Europe/Brussels",
+  }).format(appointmentStartAt);
+
+  await deliver({
+    to: customerEmail,
+    subject: `Your booking ${reference} is confirmed`,
+    text: [
+      `Hello ${customerName},`,
+      "",
+      `Your ${serviceName} booking is confirmed for ${appointment}.`,
+      `Location: ${address}`,
+      "",
+      "Please remove valuables and make sure the vehicle and agreed water/electricity access are available when we arrive.",
+      "Reply to this email or contact us if anything changes.",
+      "",
+      "Life's Details",
+    ].join("\n"),
+  });
+}
