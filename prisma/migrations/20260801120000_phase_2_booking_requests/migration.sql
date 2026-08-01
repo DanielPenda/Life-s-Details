@@ -107,3 +107,11 @@ ALTER TABLE "Booking" ADD CONSTRAINT "Booking_serviceId_fkey" FOREIGN KEY ("serv
 ALTER TABLE "BookingAddOn" ADD CONSTRAINT "BookingAddOn_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "BookingAddOn" ADD CONSTRAINT "BookingAddOn_addOnId_fkey" FOREIGN KEY ("addOnId") REFERENCES "AddOn"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "BookingStatusHistory" ADD CONSTRAINT "BookingStatusHistory_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- These tables live in Supabase's exposed public schema. Prisma connects with
+-- the database role, while API-facing anon/authenticated roles get no policies.
+ALTER TABLE "Service" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "AddOn" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Booking" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "BookingAddOn" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "BookingStatusHistory" ENABLE ROW LEVEL SECURITY;
