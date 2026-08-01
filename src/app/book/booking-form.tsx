@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { type FieldPath, get, useForm } from "react-hook-form";
 import { bookingRequestSchema, type BookingRequestInput } from "@/lib/booking-schema";
-import {
-  initialBookingActionState,
-  submitBookingRequest,
-} from "./actions";
+import { submitBookingRequest, type BookingActionState } from "./actions";
 
 type ServiceOption = {
   readonly name: string;
@@ -28,6 +25,7 @@ type AddOnOption = {
 };
 
 const steps = ["Service", "Vehicle", "Location", "Timing", "Contact", "Review"];
+const initialBookingActionState: BookingActionState = { status: "idle" };
 const stepFields: FieldPath<BookingRequestInput>[][] = [
   ["serviceSlug"],
   ["vehicleType", "vehicleMake", "vehicleModel", "vehicleCondition"],

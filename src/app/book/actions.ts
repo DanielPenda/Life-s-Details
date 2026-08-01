@@ -17,8 +17,6 @@ export type BookingActionState = {
   confirmationUrl?: string;
 };
 
-export const initialBookingActionState: BookingActionState = { status: "idle" };
-
 function confirmationUrl(reference: string, token: string) {
   return `${env.NEXT_PUBLIC_SITE_URL}/book/confirmation/${reference}?token=${encodeURIComponent(token)}`;
 }
