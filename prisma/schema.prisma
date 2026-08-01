@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PricingType {
+  FIXED
+  FROM
+  INSPECTION
+}
+
+enum BookingStatus {
+  REQUESTED
+  REVIEWING
+  CONFIRMED
+  RESCHEDULE_REQUIRED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PreferredContactMethod {
+  WHATSAPP
+  PHONE
+  EMAIL
+}
+
+enum ServiceLocationType {
+  HOME
+  WORKPLACE
+  OTHER
+}
+
+enum TimeWindow {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum VehicleCondition {
+  LIGHT
+  MODERATE
+  HEAVY
+}
+
+enum PaymentMethodPreference {
+  CASH
+  CARD
+  BANK_TRANSFER
+  DISCUSS_LATER
+}
+
+model Service {
+  id                       String    @id @default(cuid())
+  name                     String
+  slug                     String    @unique
+  shortDescription         String
+  fullDescription          String
+  basePrice                Decimal?  @db.Decimal(10, 2)
+  pricingType              PricingType
+  estimatedDurationMinutes Int
+  active                   Boolean   @default(true)
+  displayOrder             Int       @default(0)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  bookings                 Booking[]
+}
+
+model AddOn {
+  id                       String         @id @default(cuid())
+  name                     String
+  slug                     String         @unique
+  description              String
+  price                    Decimal        @db.Decimal(10, 2)
+  estimatedDurationMinutes Int
+  active                   Boolean        @default(true)
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  bookings                 BookingAddOn[]
+}
+
+model Booking {
+  id                      String                    @id @default(cuid())
+  publicReference         String                    @unique
+  accessTokenHash         String
+  idempotencyKey          String                    @unique
+  status                  BookingStatus             @default(REQUESTED)
+  customerName            String
+  email                   String
+  phone                   String
+  preferredContactMethod  PreferredContactMethod
+  serviceId               String
+  preferredDate           DateTime                  @db.Date
+  preferredTimeWindow     TimeWindow
+  alternativeDate         DateTime?                 @db.Date
+  addressLine             String
+  postcode                String
+  city                    String
+  serviceLocationType     ServiceLocationType
+  vehicleMake             String
+  vehicleModel            String
+  vehicleType             String
+  vehicleColour           String?
+  licencePlateOptional    String?
+  vehicleCondition        VehicleCondition
+  hasPetHair              Boolean                   @default(false)
+  hasStains               Boolean                   @default(false)
+  hasStrongOdour          Boolean                   @default(false)
+  conditionNotes          String?
+  accessToWater           Boolean
+  accessToElectricity     Boolean
+  paymentMethodPreference PaymentMethodPreference?
+  estimatedPrice          Decimal?                  @db.Decimal(10, 2)
+  finalPrice              Decimal?                  @db.Decimal(10, 2)
+  acquisitionSource       String?
+  customerConsent         Boolean
+  consentAt               DateTime
+  marketingConsent        Boolean                   @default(false)
+  marketingConsentAt      DateTime?
+  internalNotes           String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  service                 Service                   @relation(fields: [serviceId], references: [id])
+  addOns                   BookingAddOn[]
+  statusHistory           BookingStatusHistory[]
+
+  @@index([status, createdAt])
+  @@index([preferredDate])
+  @@index([email])
+}
+
+model BookingAddOn {
+  bookingId String
+  addOnId   String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  addOn     AddOn   @relation(fields: [addOnId], references: [id])
+
+  @@id([bookingId, addOnId])
+}
+
+model BookingStatusHistory {
+  id        String        @id @default(cuid())
+  bookingId String
+  fromStatus BookingStatus?
+  toStatus  BookingStatus
+  note      String?
+  createdAt DateTime      @default(now())
+  booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+}

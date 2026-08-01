@@ -6,6 +6,7 @@ export const services = [
     bestFor: "Routine cleaning and maintenance",
     duration: "About 1.5-2 hours",
     priceLabel: "From \u20AC49",
+    basePrice: 49,
     inclusions: [
       "Exterior hand wash",
       "Wheels and tyres cleaned",
@@ -20,6 +21,7 @@ export const services = [
     bestFor: "Built-up dirt, marks and a fuller reset",
     duration: "About 3-4 hours",
     priceLabel: "From \u20AC99",
+    basePrice: 99,
     inclusions: [
       "Everything in Refresh",
       "Detailed interior vacuum",
@@ -34,6 +36,7 @@ export const services = [
     bestFor: "A full transformation or sale preparation",
     duration: "About 5-7 hours",
     priceLabel: "Request estimate",
+    basePrice: null,
     inclusions: [
       "Everything in Deep Clean",
       "Exterior decontamination",

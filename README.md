@@ -4,11 +4,11 @@ Mobile-first conversion website for Life's Details, a mobile car-detailing busin
 
 ## Current Phase
 
-Phase 1 - Conversion Landing Page.
+Phase 2 - Simple Booking Request.
 
-The website now explains the offer, compares three configurable service packages, demonstrates before/after interaction, answers common questions, describes the service area, and sends visitors into direct booking enquiries.
+The website now accepts structured six-step booking requests, stores them in PostgreSQL, records initial status history, limits accidental duplicate submissions, and sends owner/customer notifications through a replaceable email adapter.
 
-Database-backed booking, customer accounts, admin workflows, payments, and marketing automation remain intentionally out of scope.
+Customer accounts, admin management, payments, live availability, and marketing automation remain intentionally out of scope. Every request requires manual owner confirmation.
 
 ## Local Setup
 
@@ -17,11 +17,23 @@ pnpm install
 pnpm dev
 ```
 
-Create `.env.local` if the site URL differs from local development:
+Copy `.env.example` to `.env.local`, then configure a PostgreSQL database:
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/lifes_details?sslmode=require
+EMAIL_PROVIDER=log
 ```
+
+Prepare the database:
+
+```bash
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
+```
+
+For production, run `pnpm db:deploy` during deployment. Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, and a verified `EMAIL_FROM` value when real email delivery is required. The default `log` provider records only recipient and subject metadata during development.
 
 ## Validation
 
@@ -32,14 +44,16 @@ pnpm test
 pnpm build
 ```
 
-## Phase 1 Content
+## Phase 2 Booking
 
-- Business and contact details: `src/config/business.ts`
-- Announcement, FAQs, service radius, social links, and legal placeholder: `src/config/content.ts`
-- Packages, inclusions, durations, and starting-price labels: `src/config/services.ts`
-- Analytics event names and development logger: `src/lib/analytics.ts`
+- Schema and migration: `prisma/schema.prisma` and `prisma/migrations/`
+- Service and add-on seed data: `prisma/seed.mjs`
+- Shared validation: `src/lib/booking-schema.ts`
+- Booking form: `src/app/book/booking-form.tsx`
+- Persistence action: `src/app/book/actions.ts`
+- Email provider abstraction: `src/lib/email.ts`
 
-The current package prices, 20 km service radius, payment FAQ, social links, and legal-business details must be confirmed by the owner before public launch.
+The current package prices, add-on prices, 20 km service radius, payment methods, retention period, social links, and legal-business details must be confirmed by the owner before public launch.
 
 The before/after module uses clearly labelled demonstration imagery. Replace it with consented photographs from a genuine Life's Details job before presenting the section as customer proof.
 
@@ -65,4 +79,4 @@ Tracked events:
 - `/privacy`
 - `/terms`
 
-The `/admin` placeholder remains reserved for a later phase and contains no management functionality.
+The `/admin` placeholder remains reserved for Phase 3 and contains no management functionality. Booking records are managed through the database provider until the admin phase is justified.
