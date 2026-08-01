@@ -44,6 +44,24 @@ export async function authenticateOwner(email: string, password: string) {
   return true;
 }
 
+export async function updateOwnerPassword(accessToken: string, password: string) {
+  const config = authConfig();
+  const headers = { apikey: config.key, Authorization: `Bearer ${accessToken}` };
+  const userResponse = await fetch(`${config.url}/auth/v1/user`, { headers, cache: "no-store" });
+  if (!userResponse.ok) return false;
+
+  const user = (await userResponse.json()) as SupabaseUser;
+  if (user.email?.toLowerCase() !== config.ownerEmail) return false;
+
+  const response = await fetch(`${config.url}/auth/v1/user`, {
+    method: "PUT",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+    cache: "no-store",
+  });
+  return response.ok;
+}
+
 export async function getAdminSession(): Promise<SupabaseUser | null> {
   const config = authConfig();
   const token = (await cookies()).get(accessCookie)?.value;
