@@ -7,13 +7,18 @@ const accessCookie = "lifesdetails_admin_access";
 type SupabaseUser = { id: string; email?: string };
 
 function authConfig() {
-  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY || !env.ADMIN_EMAIL || !env.NEXT_PUBLIC_SITE_URL) {
+  const url = env.NEXT_PUBLIC_SUPABASE_URL ?? env.SUPABASE_URL;
+  const key = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ?? env.SUPABASE_ANON_KEY
+    ?? env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key || !env.ADMIN_EMAIL || !env.NEXT_PUBLIC_SITE_URL) {
     throw new Error("Admin authentication is not configured.");
   }
 
   return {
-    url: env.NEXT_PUBLIC_SUPABASE_URL,
-    key: env.SUPABASE_PUBLISHABLE_KEY,
+    url,
+    key,
     ownerEmail: env.ADMIN_EMAIL.toLowerCase(),
     siteUrl: env.NEXT_PUBLIC_SITE_URL,
   };
