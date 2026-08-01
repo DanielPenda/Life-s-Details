@@ -7,6 +7,7 @@ import { clearAdminSession, requireAdminSession } from "@/lib/admin-auth";
 import { adminBookingUpdateSchema, brusselsLocalToUtc, parseOptionalMoney } from "@/lib/admin-booking";
 import { sendBookingConfirmation } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { ACTIVE_SLOT_STATUSES } from "@/lib/availability";
 
 export async function logoutOwner() {
   await clearAdminSession();
@@ -43,11 +44,16 @@ export async function updateBooking(formData: FormData) {
   if (!parsed.success) redirect(`/admin/bookings/${encodeURIComponent(reference)}?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Check the booking details.")}`);
 
   const input = parsed.data;
-  const previous = await prisma.booking.findUnique({ where: { id: bookingId }, include: { service: true } });
+  const previous = await prisma.booking.findUnique({ where: { id: bookingId }, include: { service: true, addOns: { include: { addOn: true } } } });
   if (!previous || previous.publicReference !== reference) redirect("/admin?error=Booking%20not%20found");
 
   const appointmentStartAt = brusselsLocalToUtc(input.appointmentDate, input.appointmentTime);
-  const appointmentEndAt = appointmentStartAt ? new Date(appointmentStartAt.getTime() + previous.service.estimatedDurationMinutes * 60000) : null;
+  const durationMinutes = previous.service.estimatedDurationMinutes + previous.addOns.reduce((sum, item) => sum + item.addOn.estimatedDurationMinutes, 0);
+  const appointmentEndAt = appointmentStartAt ? new Date(appointmentStartAt.getTime() + durationMinutes * 60000) : null;
+  if (appointmentStartAt && appointmentEndAt && ACTIVE_SLOT_STATUSES.includes(input.status as (typeof ACTIVE_SLOT_STATUSES)[number])) {
+    const conflict = await prisma.booking.findFirst({ where: { id: { not: bookingId }, status: { in: [...ACTIVE_SLOT_STATUSES] }, appointmentStartAt: { lt: appointmentEndAt }, appointmentEndAt: { gt: appointmentStartAt } }, select: { publicReference: true } });
+    if (conflict) redirect(`/admin/bookings/${encodeURIComponent(reference)}?error=${encodeURIComponent(`That time overlaps booking ${conflict.publicReference}.`)}`);
+  }
   const paidAt = input.paymentStatus === "PAID" ? previous.paidAt ?? new Date() : null;
   const update = { status: input.status, appointmentStartAt, appointmentEndAt, estimatedPrice: input.estimatedPrice, finalPrice: input.finalPrice, paymentStatus: input.paymentStatus, paymentMethod: input.paymentMethod, paidAt, internalNotes: input.internalNotes || null };
   const audits = auditEntries(previous, update, user.email ?? "owner", input.actionNote);

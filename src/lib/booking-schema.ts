@@ -22,8 +22,7 @@ export const bookingRequestSchema = z.object({
   accessToWater: z.boolean(),
   accessToElectricity: z.boolean(),
   preferredDate: z.string().date("Choose a preferred date."),
-  preferredTimeWindow: z.enum(["MORNING", "AFTERNOON", "EVENING"]),
-  alternativeDate: z.string().date().optional().or(z.literal("")),
+  appointmentTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Choose an available start time."),
   customerName: z.string().trim().min(2, "Enter your name.").max(100),
   phone: z.string().trim().min(8, "Enter a valid phone number.").max(30),
   email: z.string().trim().email("Enter a valid email address.").max(160),
@@ -43,9 +42,6 @@ export const bookingRequestSchema = z.object({
   const today = new Date().toISOString().slice(0, 10);
   if (request.preferredDate < today) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ["preferredDate"], message: "Choose today or a future date." });
-  }
-  if (request.alternativeDate && request.alternativeDate < today) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ["alternativeDate"], message: "Choose today or a future date." });
   }
 });
 
@@ -75,8 +71,7 @@ export function parseBookingFormData(formData: FormData) {
     accessToWater: yesNo("accessToWater"),
     accessToElectricity: yesNo("accessToElectricity"),
     preferredDate: formData.get("preferredDate"),
-    preferredTimeWindow: formData.get("preferredTimeWindow"),
-    alternativeDate: formData.get("alternativeDate"),
+    appointmentTime: formData.get("appointmentTime"),
     customerName: formData.get("customerName"),
     phone: formData.get("phone"),
     email: formData.get("email"),

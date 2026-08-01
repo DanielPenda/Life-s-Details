@@ -68,6 +68,14 @@ enum PaymentMethod {
   OTHER
 }
 
+enum CostCategory {
+  TRANSPORT
+  PRODUCTS
+  EQUIPMENT
+  SUBSCRIPTIONS
+  OTHER
+}
+
 model Service {
   id                       String    @id @default(cuid())
   name                     String
@@ -189,4 +197,29 @@ model BookingAuditLog {
   booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId, createdAt])
+}
+
+model WorkAvailability {
+  id          String   @id @default(cuid())
+  date        DateTime @unique @db.Date
+  startMinute Int
+  endMinute   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+}
+
+model BusinessCost {
+  id          String       @id @default(cuid())
+  incurredOn  DateTime     @db.Date
+  category    CostCategory
+  description String
+  amount      Decimal      @db.Decimal(10, 2)
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([incurredOn])
+  @@index([category, incurredOn])
 }

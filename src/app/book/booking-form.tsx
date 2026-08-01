@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, ArrowRight, Check, LoaderCircle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { type FieldPath, get, useForm } from "react-hook-form";
@@ -30,7 +30,7 @@ const stepFields: FieldPath<BookingRequestInput>[][] = [
   ["serviceSlug"],
   ["vehicleType", "vehicleMake", "vehicleModel", "vehicleCondition"],
   ["addressLine", "postcode", "city", "serviceLocationType", "accessToWater", "accessToElectricity"],
-  ["preferredDate", "preferredTimeWindow"],
+  ["preferredDate", "appointmentTime"],
   ["customerName", "phone", "email", "preferredContactMethod", "customerConsent"],
   [],
 ];
@@ -55,8 +55,7 @@ const defaultValues: BookingRequestInput = {
   accessToWater: true,
   accessToElectricity: true,
   preferredDate: "",
-  preferredTimeWindow: "MORNING",
-  alternativeDate: "",
+  appointmentTime: "",
   customerName: "",
   phone: "",
   email: "",
@@ -90,6 +89,8 @@ export function BookingForm({
     initialBookingActionState,
   );
   const [isSubmitting, startTransition] = useTransition();
+  const [schedule, setSchedule] = useState<{ durationMinutes: number; days: { date: string; label: string; openTime: string; closeTime: string; slots: string[] }[] }>({ durationMinutes: 0, days: [] });
+  const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
   const {
     register,
     handleSubmit,
@@ -106,11 +107,10 @@ export function BookingForm({
   const values = watch();
   const selectedService = services.find((service) => service.slug === values.serviceSlug);
   const selectedAddOns = addOns.filter((addOn) => values.addOnSlugs.includes(addOn.slug));
+  const selectedAddOnKey = [...values.addOnSlugs].sort().join(",");
   const estimate = selectedService?.basePrice === null
     ? null
     : (selectedService?.basePrice ?? 0) + selectedAddOns.reduce((sum, item) => sum + item.price, 0);
-  const today = new Date().toISOString().slice(0, 10);
-
   useEffect(() => {
     setValue("idempotencyKey", crypto.randomUUID());
   }, [setValue]);
@@ -120,6 +120,19 @@ export function BookingForm({
       router.push(actionState.confirmationUrl);
     }
   }, [actionState, router]);
+
+  useEffect(() => {
+    setValue("preferredDate", ""); setValue("appointmentTime", "");
+    if (!values.serviceSlug) { setSchedule({ durationMinutes: 0, days: [] }); return; }
+    const controller = new AbortController(); const params = new URLSearchParams({ service: values.serviceSlug });
+    selectedAddOnKey.split(",").filter(Boolean).forEach((slug) => params.append("addOn", slug));
+    setIsLoadingSchedule(true);
+    fetch(`/api/availability?${params}`, { cache: "no-store", signal: controller.signal })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Availability unavailable")))
+      .then(setSchedule).catch((error: unknown) => { if (!(error instanceof DOMException && error.name === "AbortError")) setSchedule({ durationMinutes: 0, days: [] }); })
+      .finally(() => { if (!controller.signal.aborted) setIsLoadingSchedule(false); });
+    return () => controller.abort();
+  }, [selectedAddOnKey, setValue, values.serviceSlug]);
 
   const goNext = async () => {
     const valid = await trigger(stepFields[step], { shouldFocus: true });
@@ -232,12 +245,8 @@ export function BookingForm({
         </section>
 
         <section className="booking-step" hidden={step !== 3}>
-          <div className="step-heading"><span>Step 4 of 6</span><h2>Preferred timing</h2><p>This is a preference, not live availability. We will confirm the final appointment with you.</p></div>
-          <div className="form-grid two-columns">
-            <Field label="Preferred date" error={errorFor("preferredDate")}><input {...register("preferredDate")} min={today} type="date" /></Field>
-            <Field label="Time window" error={errorFor("preferredTimeWindow")}><select {...register("preferredTimeWindow")}><option value="MORNING">Morning</option><option value="AFTERNOON">Afternoon</option><option value="EVENING">Evening</option></select></Field>
-            <Field label="Alternative date (optional)"><input {...register("alternativeDate")} min={today} type="date" /></Field>
-          </div>
+          <div className="step-heading"><span>Step 4 of 6</span><h2>Choose an available time</h2><p>Only days with enough uninterrupted time for this service are shown.</p></div>
+          {isLoadingSchedule ? <div className="slot-loading"><LoaderCircle aria-hidden="true" className="spin" size={19} />Checking availability...</div> : schedule.days.length ? <div className="slot-picker"><Field label="Available day" error={errorFor("preferredDate")}><select {...register("preferredDate")}><option value="">Choose a day</option>{schedule.days.map((day) => <option key={day.date} value={day.date}>{day.label} · {day.openTime}-{day.closeTime}</option>)}</select></Field>{values.preferredDate ? <fieldset className="booking-fieldset"><legend>Start time</legend><p className="slot-duration"><Clock3 aria-hidden="true" size={16} />Allows {Math.ceil(schedule.durationMinutes / 60 * 10) / 10} hours for your selection.</p><div className="time-slot-grid">{schedule.days.find((day) => day.date === values.preferredDate)?.slots.map((time) => <label data-selected={values.appointmentTime === time} key={time}><input {...register("appointmentTime")} type="radio" value={time} /><Clock3 aria-hidden="true" size={15} />{time}</label>)}</div>{errorFor("appointmentTime") ? <p className="field-error">{errorFor("appointmentTime")}</p> : null}</fieldset> : null}</div> : <div className="no-slots"><CalendarDays aria-hidden="true" size={25} /><strong>No suitable dates are open yet.</strong><span>Choose another service or check back after new working days are added.</span></div>}
         </section>
 
         <section className="booking-step" hidden={step !== 4}>
@@ -263,10 +272,10 @@ export function BookingForm({
             <ReviewBlock title="Service" onEdit={() => setStep(0)}><strong>{selectedService?.name ?? "Not selected"}</strong><span>{selectedAddOns.length ? selectedAddOns.map((item) => item.name).join(", ") : "No add-ons"}</span><b>{estimate === null ? "Estimate after inspection" : `Estimated from €${estimate}`}</b></ReviewBlock>
             <ReviewBlock title="Vehicle" onEdit={() => setStep(1)}><strong>{values.vehicleMake} {values.vehicleModel}</strong><span>{formatChoice(values.vehicleType)} · {formatChoice(values.vehicleCondition)} dirt</span></ReviewBlock>
             <ReviewBlock title="Location" onEdit={() => setStep(2)}><strong>{values.addressLine}</strong><span>{values.postcode} {values.city} · {formatChoice(values.serviceLocationType)}</span></ReviewBlock>
-            <ReviewBlock title="Preferred time" onEdit={() => setStep(3)}><strong>{values.preferredDate || "No date selected"}</strong><span>{formatChoice(values.preferredTimeWindow)}{values.alternativeDate ? ` · Alternative ${values.alternativeDate}` : ""}</span></ReviewBlock>
+            <ReviewBlock title="Appointment time" onEdit={() => setStep(3)}><strong>{values.preferredDate || "No date selected"}</strong><span>{values.appointmentTime || "No time selected"}</span></ReviewBlock>
             <ReviewBlock title="Contact" onEdit={() => setStep(4)}><strong>{values.customerName}</strong><span>{values.email} · {values.phone}</span><span>Reply by {formatChoice(values.preferredContactMethod)}</span></ReviewBlock>
           </div>
-          <div className="request-notice"><ShieldCheck aria-hidden="true" /><p><strong>This sends a request, not a confirmed appointment.</strong><span>We will check the service, location and timing before confirming.</span></p></div>
+          <div className="request-notice"><ShieldCheck aria-hidden="true" /><p><strong>Your selected time is held with this request.</strong><span>We will review the vehicle and location details before confirming.</span></p></div>
         </section>
 
         {actionState.status === "error" ? <div className="form-alert" role="alert"><strong>Request not sent</strong><span>{actionState.message}</span></div> : null}

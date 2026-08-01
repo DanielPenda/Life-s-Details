@@ -26,7 +26,8 @@ export default async function ConfirmationPage({
       accessTokenHash: true,
       publicReference: true,
       preferredDate: true,
-      preferredTimeWindow: true,
+      appointmentStartAt: true,
+      appointmentEndAt: true,
       customerName: true,
       postcode: true,
       city: true,
@@ -51,12 +52,12 @@ export default async function ConfirmationPage({
         <dl className="confirmation-summary">
           <div><dt>Service</dt><dd>{booking.service.name}</dd></div>
           <div><dt>Vehicle</dt><dd>{booking.vehicleMake} {booking.vehicleModel}</dd></div>
-          <div><dt>Preferred time</dt><dd>{booking.preferredDate.toLocaleDateString("en-BE", { dateStyle: "long", timeZone: "UTC" })} · {booking.preferredTimeWindow.toLowerCase()}</dd></div>
+          <div><dt>Requested appointment</dt><dd>{booking.appointmentStartAt?.toLocaleString("en-BE", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Brussels" })}</dd></div>
           <div><dt>Location</dt><dd>{booking.postcode} {booking.city}</dd></div>
           {booking.addOns.length ? <div><dt>Add-ons</dt><dd>{booking.addOns.map(({ addOn }) => addOn.name).join(", ")}</dd></div> : null}
           <div><dt>Starting estimate</dt><dd>{booking.estimatedPrice === null ? "After inspection" : `€${Number(booking.estimatedPrice).toFixed(0)}`}</dd></div>
         </dl>
-        <div className="next-steps"><h2>What happens next?</h2><ol><li>We check the requested service, location and timing.</li><li>We contact you using your preferred method.</li><li>Your appointment is only confirmed after you accept the final details.</li></ol></div>
+        <div className="next-steps"><h2>What happens next?</h2><ol><li>Your selected time is held while we review the request.</li><li>We check the service and location details.</li><li>We contact you using your preferred method to confirm.</li></ol></div>
         <TrackedLink className="button button-primary" event={analyticsEvents.whatsappClick} eventProperties={{ placement: "booking_confirmation" }} href={contactLinks.whatsapp} target="_blank"><MessageCircle aria-hidden="true" size={18} /> Ask a question on WhatsApp</TrackedLink>
       </div>
     </section>

@@ -26,7 +26,7 @@ export default async function BookPage({ searchParams }: BookPageProps) {
           <p className="eyebrow">Booking request</p>
           <h1>Tell us what your car needs.</h1>
           <p>
-            Choose your preferences now. We will review the details and contact you before confirming an appointment.
+            Choose a service and an exact open time. Your slot is held while we review the details.
           </p>
         </header>
         <BookingForm addOns={addOns} initialService={initialService} services={services} />

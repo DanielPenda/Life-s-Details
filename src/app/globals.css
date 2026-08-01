@@ -1866,7 +1866,7 @@ h3 {
 .admin-toolbar > div { display: grid; line-height: 1.15; }
 .admin-toolbar > div span { color: #aeb9b3; font-size: .68rem; font-weight: 800; text-transform: uppercase; }
 .admin-toolbar > div strong { font-family: Georgia, "Times New Roman", serif; font-size: 1.08rem; }
-.admin-toolbar nav { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+.admin-toolbar nav { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
 .admin-toolbar nav a { display: flex; min-height: 43px; align-items: center; justify-content: center; gap: 7px; border: 1px solid #3b4742; border-radius: 5px; font-size: .82rem; font-weight: 800; }
 .admin-toolbar form { grid-column: 2; grid-row: 1; }
 .admin-toolbar form button { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid #49554f; border-radius: 5px; background: transparent; color: #fff; cursor: pointer; }
@@ -1964,6 +1964,62 @@ h3 {
 .admin-calendar-day > a > span:not(.admin-status) { color: #69746f; font-size: .72rem; }
 .admin-calendar-day .admin-status { justify-self: start; margin-top: 4px; }
 .admin-calendar-empty { display: flex; min-height: 66px; align-items: center; justify-content: center; gap: 6px; color: #89938e; font-size: .72rem; }
+
+.slot-loading, .no-slots { display: flex; min-height: 150px; align-items: center; justify-content: center; gap: 9px; border: 1px solid #d4dbd7; background: #f7f9f8; color: #67726d; }
+.no-slots { flex-direction: column; padding: 26px; text-align: center; }
+.no-slots strong { color: var(--primary); }
+.no-slots span { max-width: 380px; font-size: .82rem; }
+.slot-picker { display: grid; gap: 20px; }
+.slot-duration { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; color: #66716c; font-size: .78rem; }
+.time-slot-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.time-slot-grid label { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 6px; border: 1px solid #bfc8c3; background: #fff; font-size: .82rem; font-weight: 800; cursor: pointer; }
+.time-slot-grid label[data-selected="true"] { border-color: var(--accent); background: #edf7f1; color: #16462f; }
+.time-slot-grid input { position: absolute; opacity: 0; pointer-events: none; }
+
+.availability-form { display: grid; gap: 12px; border-block: 1px solid #cbd2ce; padding-block: 18px; }
+.availability-form label { display: grid; gap: 6px; }
+.availability-form label span { color: #65706b; font-size: .7rem; font-weight: 850; text-transform: uppercase; }
+.availability-form input { min-height: 44px; border: 1px solid #bfc8c3; border-radius: 4px; background: #fff; padding: 0 10px; }
+.availability-window { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #dde2df; background: #edf7f1; padding: 7px 10px; color: #20543c; font-size: .72rem; font-weight: 850; }
+.availability-window span { display: flex; align-items: center; gap: 5px; }
+.availability-window button, .recent-costs button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; background: transparent; color: #8b3434; cursor: pointer; }
+.availability-closed { border-bottom: 1px solid #dde2df; padding: 7px 10px; color: #8a6154; font-size: .7rem; font-weight: 850; text-transform: uppercase; }
+
+.finance-metrics { display: grid; border: 1px solid #cbd2ce; background: #fff; }
+.finance-metrics article { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-bottom: 1px solid #dce1de; padding: 15px; }
+.finance-metrics article:last-child { border-bottom: 0; }
+.finance-metrics article > span { grid-column: 1 / -1; color: #59645f; font-size: .7rem; font-weight: 900; text-transform: uppercase; }
+.finance-metrics article div { display: grid; gap: 3px; min-width: 0; }
+.finance-metrics small { color: #78827d; font-size: .65rem; }
+.finance-metrics strong, .finance-metrics b { overflow-wrap: anywhere; font-size: .92rem; }
+.finance-metrics [data-negative="true"] b { color: #a03838; }
+.finance-workspace { display: grid; gap: 28px; }
+.finance-analysis { display: grid; gap: 18px; min-width: 0; }
+.finance-chart { display: grid; gap: 8px; }
+.finance-chart-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) 74px; gap: 9px; align-items: center; font-size: .7rem; }
+.finance-chart-row > div { display: grid; gap: 3px; }
+.finance-chart-row i, .finance-chart-row em { display: block; min-width: 2px; height: 7px; background: #2f7652; }
+.finance-chart-row em { background: #c77756; }
+.finance-chart-row b { text-align: right; }
+.finance-legend { display: flex; gap: 18px; color: #65706b; font-size: .72rem; }
+.finance-legend span { display: flex; align-items: center; gap: 6px; }
+.finance-legend i { width: 18px; height: 7px; background: #2f7652; }
+.finance-legend span:last-child i { background: #c77756; }
+.service-revenue { display: grid; border-top: 1px solid #cbd2ce; }
+.service-revenue div { display: flex; justify-content: space-between; gap: 15px; border-bottom: 1px solid #dce1de; padding: 11px 0; }
+.cost-entry { border-top: 3px solid var(--accent); background: #fff; padding: 18px; }
+.recent-costs > div:last-child { border-top: 1px solid #cbd2ce; }
+.recent-costs article { display: grid; grid-template-columns: minmax(0, 1fr) auto 34px; gap: 10px; align-items: center; border-bottom: 1px solid #dce1de; padding: 12px 4px; }
+.recent-costs article > div { display: grid; gap: 3px; }
+.recent-costs article span { color: #6d7772; font-size: .72rem; }
+
+@media (min-width: 700px) {
+  .time-slot-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .availability-form { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: end; }
+  .finance-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .finance-metrics article:nth-child(odd) { border-right: 1px solid #dce1de; }
+  .finance-workspace { grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr); align-items: start; }
+}
 .admin-loading { display: flex; min-height: 50vh; align-items: center; justify-content: center; gap: 10px; color: #63706a; font-weight: 750; }
 .admin-loading span { width: 20px; height: 20px; border: 2px solid #b7c0bb; border-top-color: var(--primary); border-radius: 50%; }
 

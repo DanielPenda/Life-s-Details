@@ -8,6 +8,8 @@ import { sendBookingNotifications } from "@/lib/email";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { checkBookingRateLimit } from "@/lib/rate-limit";
+import { ACTIVE_SLOT_STATUSES, dateOnly, deriveTimeWindow, timeToMinutes } from "@/lib/availability";
+import { brusselsLocalToUtc } from "@/lib/admin-booking";
 
 export type BookingActionState = {
   status: "idle" | "error" | "success";
@@ -82,8 +84,20 @@ export async function submitBookingRequest(
     const addOnTotal = selectedAddOns.reduce((total, addOn) => total + Number(addOn.price), 0);
     const estimatedPrice = service.basePrice === null ? null : Number(service.basePrice) + addOnTotal;
     const publicReference = createBookingReference();
-    const created = await prisma.booking.create({
-      data: {
+    const durationMinutes = service.estimatedDurationMinutes + selectedAddOns.reduce((total, addOn) => total + addOn.estimatedDurationMinutes, 0);
+    const appointmentStartAt = brusselsLocalToUtc(input.preferredDate, input.appointmentTime);
+    const appointmentEndAt = appointmentStartAt ? new Date(appointmentStartAt.getTime() + durationMinutes * 60000) : null;
+    if (!appointmentStartAt || !appointmentEndAt || appointmentStartAt <= new Date()) return { status: "error", message: "That appointment time is no longer available. Please choose another slot." };
+    const created = await prisma.$transaction(async (tx) => {
+      const window = await tx.workAvailability.findUnique({ where: { date: dateOnly(input.preferredDate) } });
+      const startMinute = timeToMinutes(input.appointmentTime);
+      if (!window || startMinute < window.startMinute || startMinute + durationMinutes > window.endMinute) return null;
+      const conflict = await tx.booking.findFirst({ where: {
+        status: { in: [...ACTIVE_SLOT_STATUSES] },
+        appointmentStartAt: { lt: appointmentEndAt }, appointmentEndAt: { gt: appointmentStartAt },
+      }, select: { id: true } });
+      if (conflict) return null;
+      return tx.booking.create({ data: {
         publicReference,
         accessTokenHash: hashBookingAccessToken(input.idempotencyKey),
         idempotencyKey: input.idempotencyKey,
@@ -93,10 +107,10 @@ export async function submitBookingRequest(
         preferredContactMethod: input.preferredContactMethod,
         serviceId: service.id,
         preferredDate: new Date(`${input.preferredDate}T00:00:00.000Z`),
-        preferredTimeWindow: input.preferredTimeWindow,
-        alternativeDate: input.alternativeDate
-          ? new Date(`${input.alternativeDate}T00:00:00.000Z`)
-          : null,
+        preferredTimeWindow: deriveTimeWindow(input.appointmentTime),
+        alternativeDate: null,
+        appointmentStartAt,
+        appointmentEndAt,
         addressLine: input.addressLine,
         postcode: input.postcode,
         city: input.city,
@@ -126,9 +140,9 @@ export async function submitBookingRequest(
         statusHistory: {
           create: { toStatus: "REQUESTED", note: "Booking request submitted by customer." },
         },
-      },
-      select: { publicReference: true },
+      }, select: { publicReference: true } });
     });
+    if (!created) return { status: "error", message: "That appointment time was just taken or the day was closed. Please choose another available slot." };
 
     const url = confirmationUrl(created.publicReference, input.idempotencyKey);
     await sendBookingNotifications({
@@ -137,7 +151,7 @@ export async function submitBookingRequest(
       customerEmail: input.email,
       serviceName: service.name,
       preferredDate: input.preferredDate,
-      preferredTimeWindow: input.preferredTimeWindow,
+      preferredTimeWindow: `${input.preferredDate} at ${input.appointmentTime}`,
       preferredContactMethod: input.preferredContactMethod,
       phone: input.phone,
       vehicle: `${input.vehicleMake} ${input.vehicleModel} (${input.vehicleType}, ${input.vehicleCondition.toLowerCase()} dirt)`,
@@ -157,6 +171,7 @@ export async function submitBookingRequest(
     console.error("booking_request_failed", {
       reason: error instanceof Error ? error.message : "Unknown persistence error",
     });
+    if (error instanceof Error && error.message.includes("Booking_no_active_appointment_overlap")) return { status: "error", message: "That appointment time was just taken. Please choose another available slot." };
     return {
       status: "error",
       message: `We could not save your request. Please contact us at ${businessInfo.phone.display} or try again shortly.`,
